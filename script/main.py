@@ -22,16 +22,18 @@ if __name__ == "__main__":
 
 	args = parser.parse_args()
 
-	# kind of view this process like inheritance, we start with nothing and structure slowly fills in
+	path_to_stems = os.path.join(args.data_home, "stems")
+	for root, dirs, files in os.walk(path_to_stems):
+		for file in files:
+			print("this is file - ", file)
+			file_path = os.path.join(root, file)
+			print("this is file path - ", file_path)
+			args.tempo, args.instrument_name, args.key, args.sound_class = pre.musdb(file_path)
+			metadata.extraction(file_path, args.tempo, args.instrument_name, args.key, args.sound_class)
+	metadata.set_tempo(args.data_home, args.sr)
 
-	path_to_stem_test = os.path.join(args.data_home, "stems/[0282] S3-PD2-02-PA.wav")
-
-	args.tempo, args.instrument_name, args.key, args.sound_class = pre.brid(path_to_stem_test)
-
-	path_to_stem_test = os.path.join(args.data_home, "stems/Enda Reilly - Cur An Long Ag Seol.wav")
-	args.tempo, args.instrument_name, args.key, args.sound_class = pre.musdb(path_to_stem_test)
-
-	metadata.extraction(path_to_stem_test, args.tempo, args.instrument_name, args.key, args.sound_class)
+	# metadata.extraction(path_to_stem_test, args.tempo, args.instrument_name, args.key, args.sound_class)
+	# metadata.set_tempo(args.data_home, args.sr)
 
 	# instructions: 
 	# add data of one dataset, use pre-processing functions if applicable or do own pre-processing
@@ -41,4 +43,6 @@ if __name__ == "__main__":
 	# LOOKING TO CONSOLIDATE THIS PROCESS, IT WORKS FOR NOW BUT I THINK IT COULD BE MORE EFFICIENT
 
 	# once metadata structure is set, we fill in the rest and generate mixtures
+
+	# kind of view this process like inheritance, we start with nothing and structure slowly fills in
 
