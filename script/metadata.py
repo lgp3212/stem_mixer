@@ -5,7 +5,7 @@ import librosa
 def extraction(stem_file_path, **kwargs):
 
     # returning metadata object might be better, writing somewhere else
-    
+
     basename = os.path.splitext(stem_file_path)[0]
     json_file_path = basename + ".json"
 
@@ -30,7 +30,6 @@ def get_tempo(stem_path, sr):
     try:
         audio_file, sr = librosa.load(stem_path, sr=sr, mono=True)
         tempo, _ = librosa.beat.beat_track(y=audio_file, sr=sr)
-
         tempo = float(tempo[0])
 
     except FileNotFoundError as e:

@@ -1,6 +1,7 @@
 import argparse
 import os
 import metadata
+import mix
 
 def brid(file_path):
     """
@@ -152,6 +153,8 @@ if __name__ == "__main__":
     else:
         print(f"{args.dataset} is not a supported dataset.")
 
+
+    mix.generate(args.data_home, args.sr, n_stems = 2)
 
 
 
