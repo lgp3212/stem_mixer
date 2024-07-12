@@ -1,11 +1,12 @@
-def brid(file_path):
+import argparse
 
+def brid(file_path):
     """
     BRID DATASET PRE-PROCESSING
 
     Takes file path to BRID stems and assigns instrument variable based on file name
 
-    Parameters: 
+    Parameters:
     file_path (str) : path to stems
 
     Returns:
@@ -13,7 +14,6 @@ def brid(file_path):
     instrument_name (str) : name of BRID instrument if exists
     key : null
     sound_class (str) : sound_class of BRID stem, "percussive"
-
     """
 
     key = None
@@ -35,9 +35,9 @@ def brid(file_path):
         if suffix in file_path:
             instrument_name = instrument_folders[suffix]
 
-    
+
     folders = ["samba","marcha","partido alto","samba-enredo","other","capoeira"]
-    
+
     style_dict = {
         "SA.wav" : "samba",
         "PA.wav": "partido alto",
@@ -56,11 +56,11 @@ def brid(file_path):
     }
 
     style = None
-    
+
     for suffix in style_dict:
         if suffix in file_path:
             style = style_dict[suffix]
-            
+
     if style is None:
         tempo = None
 
@@ -71,7 +71,6 @@ def brid(file_path):
 
 
 def musdb(file_path):
-
     """
     MUSDB DATASET PRE-PROCESSING
 
@@ -90,14 +89,13 @@ def musdb(file_path):
     instrument_name (str) : name of MUSDB instrument / type if exists
     key : null
     sound_class : sound class of stem if instrument_name exists and is "vocals", "drums", "bass", or "other"
-
     """
-    
+
     key = None
     tempo = None
 
     type_folders = ["vocals", "drums", "bass", "other"]
-    
+
     for name in type_folders:
         if name in file_path:
             instrument_name = name
@@ -115,7 +113,18 @@ def musdb(file_path):
             instrument_name = None
             sound_class = None
 
-    return tempo, instrument_name, key, sound_class            
+    return tempo, instrument_name, key, sound_class
 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+            prog="PreprocessingHelper",
+            description="This script creates metadata for BRID and/or MUSDB"
+            )
+    parser.add_argument("--data_home", required=True, help="pathway to where is data is stored")
+    parser.add_argument("--dataset", required=True, help="pathway to where is data is stored")
+    parser.add_argument("--track_files", help="txt file with track names")
 
+    args = parser.parse_args()
+    print(f"hello world! we're processing {args.dataset}")
 
+    # TODO: add the preprocessing of brid and musdb
