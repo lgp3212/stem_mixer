@@ -33,18 +33,4 @@ if __name__ == "__main__":
             args.tempo, args.instrument_name, args.key, args.sound_class = pre.musdb(file_path)
             if file_path.endswith(".wav") or file_path.endswith(".mp3"):
                 metadata.extraction(file_path, **kwargs)
-    # metadata.set_tempo(args.data_home, args.sr)
 
-    # metadata.extraction(path_to_stem_test, args.tempo, args.instrument_name, args.key, args.sound_class)
-    # metadata.set_tempo(args.data_home, args.sr)
-
-    # instructions:
-    # add data of one dataset, use pre-processing functions if applicable or do own pre-processing
-    # with no pre-processing, all starting values will be None
-    # run metadata dictionary after each dataset addition, we want dictionaries to
-    # include as much dataset specific information as possible
-    # LOOKING TO CONSOLIDATE THIS PROCESS, IT WORKS FOR NOW BUT I THINK IT COULD BE MORE EFFICIENT
-
-    # once metadata structure is set, we fill in the rest and generate mixtures
-
-    # kind of view this process like inheritance, we start with nothing and structure slowly fills in

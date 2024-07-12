@@ -3,13 +3,16 @@ import os
 import librosa
 
 def extraction(stem_file_path, **kwargs):
-    # whenever i add text description here get indentation error, it's in google doc for now
+
+    # returning metadata object might be better, writing somewhere else
+    
     basename = os.path.splitext(stem_file_path)[0]
     json_file_path = basename + ".json"
 
     metadata = kwargs.copy()
     # duration refers to the mixture duration, therefore we don't need it.
     metadata.pop("duration", None)
+    metadata.pop("track_files", None)
 
     if metadata["tempo"] is None:
         print("tempo is None. calculating...")
@@ -23,11 +26,15 @@ def extraction(stem_file_path, **kwargs):
 
 
 def get_tempo(stem_path, sr):
+
     try:
         audio_file, sr = librosa.load(stem_path, sr=sr, mono=True)
         tempo, _ = librosa.beat.beat_track(y=audio_file, sr=sr)
+
+        tempo = float(tempo[0])
+
     except FileNotFoundError as e:
-        print(f"FIle not found: {file_path}")
+        print(f"File not found: {file_path}")
     except Exception as e:
         print(f"Unexpected error: {e}")
 

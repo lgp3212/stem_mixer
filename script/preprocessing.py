@@ -1,4 +1,6 @@
 import argparse
+import os
+import metadata
 
 def brid(file_path):
     """
@@ -121,10 +123,37 @@ if __name__ == "__main__":
             description="This script creates metadata for BRID and/or MUSDB"
             )
     parser.add_argument("--data_home", required=True, help="pathway to where is data is stored")
-    parser.add_argument("--dataset", required=True, help="pathway to where is data is stored")
+    parser.add_argument("--dataset", required=True, help="supported datasets: BRID (enter 'brid') and MUSDB (enter 'musdb')")
     parser.add_argument("--track_files", help="txt file with track names")
+    parser.add_argument("--sr", required=False, default=44100, help="sample rate, default is 44100Hz")
 
     args = parser.parse_args()
-    print(f"hello world! we're processing {args.dataset}")
+    kwargs = vars(args)
+    path_to_stems = os.path.join(args.data_home, "stems")
 
-    # TODO: add the preprocessing of brid and musdb
+    if args.dataset == "brid":
+
+        for root, dirs, files in os.walk(path_to_stems):
+            for file in files:
+                file_path = os.path.join(root, file)
+                args.tempo, args.instrument_name, args.key, args.sound_class = brid(file_path)
+                if file_path.endswith(".wav") or file_path.endswith(".mp3"):
+                    metadata.extraction(file_path, **kwargs)
+
+    elif args.dataset == "musdb":
+
+        for root, dirs, files in os.walk(path_to_stems):
+            for file in files:
+                file_path = os.path.join(root, file)
+                args.tempo, args.instrument_name, args.key, args.sound_class = brid(file_path)
+                if file_path.endswith(".wav") or file_path.endswith(".mp3"):
+                    metadata.extraction(file_path, **kwargs)
+
+    else:
+        print(f"{args.dataset} is not a supported dataset.")
+
+
+
+
+
+
