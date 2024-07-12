@@ -64,7 +64,6 @@ def brid(file_path):
     if style is None:
         tempo = None
 
-    #if style in style_to_tempo:
     else:
         tempo = style_to_tempo[style]
 
@@ -116,9 +115,7 @@ def musdb(file_path):
             instrument_name = None
             sound_class = None
 
-    return tempo, instrument_name, key, sound_class
-    # reassign arg.parse args to these values?
-            
+    return tempo, instrument_name, key, sound_class            
 
 
 

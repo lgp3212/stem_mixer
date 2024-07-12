@@ -1,6 +1,7 @@
 import argparse
 import preprocessing as pre
 import os
+import metadata
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(
@@ -28,10 +29,16 @@ if __name__ == "__main__":
 	args.tempo, args.instrument_name, args.key, args.sound_class = pre.brid(path_to_stem_test)
 
 	path_to_stem_test = os.path.join(args.data_home, "stems/Enda Reilly - Cur An Long Ag Seol.wav")
-	args.tempo, args.instrument_name, args.key, args.sound_class = pre.brid(path_to_stem_test)
+	args.tempo, args.instrument_name, args.key, args.sound_class = pre.musdb(path_to_stem_test)
 
-	print(args.tempo)
-	print(args.instrument_name)
-	print(args.key)
-	print(args.sound_class)
+	metadata.extraction(path_to_stem_test, args.tempo, args.instrument_name, args.key, args.sound_class)
+
+	# instructions: 
+	# add data of one dataset, use pre-processing functions if applicable or do own pre-processing
+	# with no pre-processing, all starting values will be None 
+	# run metadata dictionary after each dataset addition, we want dictionaries to 
+	# include as much dataset specific information as possible
+	# LOOKING TO CONSOLIDATE THIS PROCESS, IT WORKS FOR NOW BUT I THINK IT COULD BE MORE EFFICIENT
+
+	# once metadata structure is set, we fill in the rest and generate mixtures
 
