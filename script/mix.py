@@ -5,58 +5,50 @@ import uuid
 import soundfile as sf
 import librosa
 import json
+import numpy as np
 
-def generate(data_home, sr, n_stems = 4):
+def generate(data_home, sr, stretched_audios, invalid_mixture):
 
-	# this mixture chooses random stems, we want to generate with stems already selected
-	# and prepared?
+	if invalid_mixture == False:
+		# mixture_count = 1 we will sum these until desired number of mixtures produced, controls for errors
+		# put this at end. last check is for nonempty mixtures
 
-	mixture_folder = os.path.join(data_home, "mixtures")
-	os.makedirs(mixture_folder, exist_ok = True)
+		mixture_folder = os.path.join(data_home, "mixtures")
+		os.makedirs(mixture_folder, exist_ok = True)
 
-	path_to_stems = os.path.join(data_home, "stems")
+		stretched_audios_lengths = []
+		for stem in stretched_audios:
+			stretched_audios_lengths.append(len(stem))
 
-	audio_files = glob.glob(os.path.join(path_to_stems, "*.wav")) + glob.glob(os.path.join(path_to_stems, "*.mp3"))
+		min_length = min(stretched_audios_lengths)
+		min_pos = stretched_audios_lengths.index(min_length)
+		mixture_audio = stretched_audios[min_pos]
 
-	if len(audio_files) < n_stems:
-		raise ValueError(f"Not enough files in the directory to choose {num_files} random files.")
+		truncated_stems = []
+		for audio in stretched_audios:
+			audio = audio[:min_length]
+			truncated_stems.append(audio)
 
-	random_files = random.sample(audio_files, n_stems)
+		mixture_id = str(uuid.uuid4())
+		individual_output_folder = os.path.join(mixture_folder, mixture_id)
+		os.makedirs(individual_output_folder, exist_ok=True)
 
-	stem_audios = []
-	stem_audio_lengths = []
 
-	for stem in random_files:
+		for k in range(0, len(truncated_stems)):
+			sf.write(f"{individual_output_folder}/stem{k+1}.wav", truncated_stems[k], sr)
+			# check: what if mp3? or other type?
 
-		stem_audio,sr = librosa.load(stem, sr=sr)
-		stem_audio_len = len(stem_audio)
+			if(k != min_pos): # already accounted for
+				mixture_audio = mixture_audio + truncated_stems[k]
 
-		stem_audios.append(stem_audio)
-		stem_audio_lengths.append(stem_audio_len)
+		sf.write(f"{individual_output_folder}/mixture.wav", mixture_audio, sr)
 
-	min_length = min(stem_audio_lengths)
-	min_pos = stem_audio_lengths.index(min_length)
-	mixture_audio = stem_audios[min_pos]
+		# check if mixture is silent
 
-	truncated_stems = []
-	for audio in stem_audios:
-		audio = audio[:min_length]
-		truncated_stems.append(audio)
-	# concern: if somehow an empty stem ends up here, everything will get cut to 0s
-	# pre-mixture filtering / cleaning process needed where all empty stems get deleted
 
-	mixture_id = str(uuid.uuid4())
-	individual_output_folder = os.path.join(mixture_folder, mixture_id)
-	os.makedirs(individual_output_folder, exist_ok=True)
+	else:
+		valid_mixture = 0
 
-	for k in range(0, len(truncated_stems)):
-		sf.write(f"{individual_output_folder}/stem{k+1}.wav", truncated_stems[k], sr)
-		# check: what if mp3? or other type?
-
-		if(k != min_pos): # already accounted for
-			mixture_audio = mixture_audio + truncated_stems[k]
-
-	sf.write(f"{individual_output_folder}/mixture.wav", mixture_audio, sr)
 
 def select_base_track(data_home):
 	path_to_stems = os.path.join(data_home, "stems")
@@ -193,6 +185,38 @@ def stretch(data_home, sr, selected_stems, base_tempo, invalid_mixture, n_stems)
 		invalid_mixture = True
 
 	return stretched_audios, invalid_mixture
+
+def shift(sr, stretched_audios, invalid_mixture): 
+# check for empty mixture here
+	first_downbeats = []
+	final_audios = []
+
+	for audio in stretched_audios:
+		_, beat_times = librosa.beat.beat_track(y=audio, sr=sr)
+		downbeat_times = librosa.frames_to_time(beat_times, sr=sr)
+		first_downbeats.append(downbeat_times[0])
+
+	earliest_beat = min(first_downbeats)
+
+	earliest_beat_index = first_downbeats.index(earliest_beat)
+	print(earliest_beat_index)
+
+	immutable_audio = stretched_audios[earliest_beat_index]
+
+	final_audios.append(immutable_audio)
+
+	for i in range(0, len(stretched_audios)):
+		if i != earliest_beat_index:
+			shift_difference = np.abs(first_downbeats[i] - earliest_beat)
+			silence_samples = int(shift_difference * sr)
+			silence = np.zeros(silence_samples)
+
+			final_audio = np.concatenate([silence, stretched_audios[i]])
+			final_audios.append(final_audio)
+
+	return final_audios, invalid_mixture
+
+
 
 
 

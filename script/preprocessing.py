@@ -160,10 +160,11 @@ if __name__ == "__main__":
     n_stems = 2
     base_stem_name, base_tempo, tempo_bin, json_percussive, json_harmonic = mix.select_base_track(args.data_home)
     selected_stems, base_tempo, invalid_mixture = mix.select_top_tracks(base_stem_name, base_tempo, tempo_bin, json_percussive, json_harmonic, n_stems)
-    mix.stretch(args.data_home, args.sr, selected_stems, base_tempo, invalid_mixture, n_stems)
+    stretched_audios, invalid_mixture = mix.stretch(args.data_home, args.sr, selected_stems, base_tempo, invalid_mixture, n_stems)
+    final_audios, invalid_mixture = mix.shift(args.sr, stretched_audios, invalid_mixture)
 
-    #mix.generate(args.data_home, args.sr, n_stems = 2)
-
+    mix.generate(args.data_home, args.sr, final_audios, invalid_mixture)
+    # prob need to factor in duration here
 
 
 
