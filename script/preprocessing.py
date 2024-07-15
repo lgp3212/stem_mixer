@@ -96,11 +96,14 @@ def musdb(file_path):
 
     key = None
     tempo = None
+    instrument_name = None
+    sound_class = None
 
     type_folders = ["vocals", "drums", "bass", "other"]
 
     for name in type_folders:
         if name in file_path:
+
             instrument_name = name
 
             if instrument_name == "vocals":
@@ -112,9 +115,6 @@ def musdb(file_path):
             else:
                 sound_class = None
 
-        else:
-            instrument_name = None
-            sound_class = None
 
     return tempo, instrument_name, key, sound_class
 
@@ -140,22 +140,29 @@ if __name__ == "__main__":
                 args.tempo, args.instrument_name, args.key, args.sound_class = brid(file_path)
                 if file_path.endswith(".wav") or file_path.endswith(".mp3"):
                     metadata.extraction(file_path, **kwargs)
-                    metadata.percussive_harmonic(file_path, args.sr)
+
 
     elif args.dataset == "musdb":
 
         for root, dirs, files in os.walk(path_to_stems):
             for file in files:
                 file_path = os.path.join(root, file)
-                args.tempo, args.instrument_name, args.key, args.sound_class = brid(file_path)
+                args.tempo, args.instrument_name, args.key, args.sound_class = musdb(file_path)
+                print("instrument name ",args.instrument_name)
                 if file_path.endswith(".wav") or file_path.endswith(".mp3"):
                     metadata.extraction(file_path, **kwargs)
+
 
     else:
         print(f"{args.dataset} is not a supported dataset.")
 
 
-    mix.generate(args.data_home, args.sr, n_stems = 2)
+    n_stems = 2
+    base_stem_name, base_tempo, tempo_bin, json_percussive, json_harmonic = mix.select_base_track(args.data_home)
+    selected_stems, base_tempo, invalid_mixture = mix.select_top_tracks(base_stem_name, base_tempo, tempo_bin, json_percussive, json_harmonic, n_stems)
+    mix.stretch(args.data_home, args.sr, selected_stems, base_tempo, invalid_mixture, n_stems)
+
+    #mix.generate(args.data_home, args.sr, n_stems = 2)
 
 
 
