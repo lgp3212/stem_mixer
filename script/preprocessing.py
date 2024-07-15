@@ -140,6 +140,7 @@ if __name__ == "__main__":
                 args.tempo, args.instrument_name, args.key, args.sound_class = brid(file_path)
                 if file_path.endswith(".wav") or file_path.endswith(".mp3"):
                     metadata.extraction(file_path, **kwargs)
+                    metadata.percussive_harmonic(file_path, args.sr)
 
     elif args.dataset == "musdb":
 
@@ -155,6 +156,8 @@ if __name__ == "__main__":
 
 
     mix.generate(args.data_home, args.sr, n_stems = 2)
+
+
 
 
 

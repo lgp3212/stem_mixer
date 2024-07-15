@@ -1,6 +1,8 @@
 import json
 import os
 import librosa
+import mix
+import numpy as np
 
 def extraction(stem_file_path, **kwargs):
 
@@ -38,3 +40,35 @@ def get_tempo(stem_path, sr):
         print(f"Unexpected error: {e}")
 
     return tempo
+
+def percussive_harmonic(stem_path, sr):
+    try:
+        audio_file, sr = librosa.load(stem_path, sr=sr, mono=True)
+        audio_norm = librosa.util.normalize(audio_file)
+        harmonic, percussive = librosa.effects.hpss(audio_norm)
+
+        print(stem_path)
+
+        harmonic_energy = abs(np.mean(harmonic))
+        print("harmonic energy ", harmonic_energy)
+        percussive_energy = abs(np.mean(percussive))
+        print("percussive energy ",percussive_energy)
+
+        percent_difference = abs(harmonic_energy - percussive_energy) / ((harmonic_energy + percussive_energy) / 2)
+        print(percent_difference)
+
+        threshold = 0.15 # 30% THRESHOLD
+
+        if percent_difference > threshold:
+            result = "percussive" if percussive_energy > harmonic_energy else "harmonic"
+        else:
+            result = None
+
+        print(result)
+        print("")
+
+    except FileNotFoundError as e:
+        print(f"File not found: {file_path}")
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+
