@@ -127,6 +127,8 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", required=True, help="supported datasets: BRID (enter 'brid') and MUSDB (enter 'musdb')")
     parser.add_argument("--track_files", help="txt file with track names")
     parser.add_argument("--sr", required=False, default=44100, help="sample rate, default is 44100Hz")
+    parser.add_argument("--duration", required=False, default=10.0, help="mixture duration, default is 10 seconds")
+    parser.add_argument("--n_mixtures", required=False, default=5, help="number of mixtures created")
 
     args = parser.parse_args()
     kwargs = vars(args)
@@ -157,14 +159,28 @@ if __name__ == "__main__":
         print(f"{args.dataset} is not a supported dataset.")
 
 
-    n_stems = 2
+    n_stems = 2 # should i add to kwargs?
     base_stem_name, base_tempo, tempo_bin, json_percussive, json_harmonic = mix.select_base_track(args.data_home)
     selected_stems, base_tempo, invalid_mixture = mix.select_top_tracks(base_stem_name, base_tempo, tempo_bin, json_percussive, json_harmonic, n_stems)
     stretched_audios, invalid_mixture = mix.stretch(args.data_home, args.sr, selected_stems, base_tempo, invalid_mixture, n_stems)
     final_audios, invalid_mixture = mix.shift(args.sr, stretched_audios, invalid_mixture)
 
-    mix.generate(args.data_home, args.sr, final_audios, invalid_mixture)
-    # prob need to factor in duration here
+    count = 0
+    n_stems = 2
+    while count < args.n_mixtures:
+        invalid_mixture = False
+        base_stem_name, base_tempo, tempo_bin, json_percussive, json_harmonic = mix.select_base_track(args.data_home)
+        selected_stems, base_tempo, invalid_mixture = mix.select_top_tracks(base_stem_name, base_tempo, tempo_bin, json_percussive, json_harmonic, n_stems)
+        stretched_audios, invalid_mixture = mix.stretch(args.data_home, args.sr, selected_stems, base_tempo, invalid_mixture, n_stems) 
+        final_audios, invalid_mixture = mix.shift(args.sr, stretched_audios, invalid_mixture)
+
+        if invalid_mixture == False: # using this to guard against any sort of error 
+            mix.generate(args.data_home, args.sr, args.duration, final_audios)
+            count += 1
+
+        
+
+
 
 
 

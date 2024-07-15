@@ -21,6 +21,8 @@ def extraction(stem_file_path, **kwargs):
     # duration refers to the mixture duration, therefore we don't need it.
     metadata.pop("duration", None)
     metadata.pop("track_files", None)
+    metadata.pop("duration", None)
+    metadata.pop("n_mixtures", None)
 
     if metadata["tempo"] is None:
         print("tempo is None. calculating...")

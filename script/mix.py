@@ -7,48 +7,48 @@ import librosa
 import json
 import numpy as np
 
-def generate(data_home, sr, stretched_audios, invalid_mixture):
-
-	if invalid_mixture == False:
-		# mixture_count = 1 we will sum these until desired number of mixtures produced, controls for errors
-		# put this at end. last check is for nonempty mixtures
-
-		mixture_folder = os.path.join(data_home, "mixtures")
-		os.makedirs(mixture_folder, exist_ok = True)
-
-		stretched_audios_lengths = []
-		for stem in stretched_audios:
-			stretched_audios_lengths.append(len(stem))
-
-		min_length = min(stretched_audios_lengths)
-		min_pos = stretched_audios_lengths.index(min_length)
-		mixture_audio = stretched_audios[min_pos]
-
-		truncated_stems = []
-		for audio in stretched_audios:
-			audio = audio[:min_length]
-			truncated_stems.append(audio)
-
-		mixture_id = str(uuid.uuid4())
-		individual_output_folder = os.path.join(mixture_folder, mixture_id)
-		os.makedirs(individual_output_folder, exist_ok=True)
+def generate(data_home, sr, duration, stretched_audios):
 
 
-		for k in range(0, len(truncated_stems)):
-			sf.write(f"{individual_output_folder}/stem{k+1}.wav", truncated_stems[k], sr)
-			# check: what if mp3? or other type?
+	mixture_folder = os.path.join(data_home, "mixtures")
+	os.makedirs(mixture_folder, exist_ok = True)
 
-			if(k != min_pos): # already accounted for
-				mixture_audio = mixture_audio + truncated_stems[k]
+	stretched_audios_lengths = []
+	for stem in stretched_audios:
+		stretched_audios_lengths.append(len(stem))
 
-		sf.write(f"{individual_output_folder}/mixture.wav", mixture_audio, sr)
+	min_length = min(stretched_audios_lengths)
+	min_pos = stretched_audios_lengths.index(min_length)
+	mixture_audio = stretched_audios[min_pos]
 
-		# check if mixture is silent
+	total_length = len(mixture_audio)
+	center = total_length // 2
+	start_sample = int(max(0, center - (duration * sr) // 2))
+	end_sample = int(min(total_length, center + (duration * sr) // 2))
+
+	truncated_stems = []
+	for audio in stretched_audios:
+		audio = audio[:min_length]
+		audio = audio[start_sample:end_sample]
+		truncated_stems.append(audio)
+
+	mixture_id = str(uuid.uuid4())
+	individual_output_folder = os.path.join(mixture_folder, mixture_id)
+	os.makedirs(individual_output_folder, exist_ok=True)
 
 
-	else:
-		valid_mixture = 0
+	for k in range(0, len(truncated_stems)):
+		sf.write(f"{individual_output_folder}/stem{k+1}.wav", truncated_stems[k], sr)
+		# check: what if mp3? or other type?
 
+		if(k != min_pos): # already accounted for
+
+			
+			mixture_audio = mixture_audio[start_sample:end_sample]
+			mixture_audio = mixture_audio + truncated_stems[k]
+
+
+	sf.write(f"{individual_output_folder}/mixture.wav", mixture_audio, sr)
 
 def select_base_track(data_home):
 	path_to_stems = os.path.join(data_home, "stems")
@@ -179,7 +179,12 @@ def stretch(data_home, sr, selected_stems, base_tempo, invalid_mixture, n_stems)
 		if selected_stems_keys[0] in file:
 			wav_file = file
 	audio, sr = librosa.load(wav_file, sr=sr)
-	stretched_audios.append(audio)
+	audio_norm = librosa.util.normalize(audio)
+
+	# normalizing audio 
+
+
+	stretched_audios.append(audio_norm)
 
 	if len(stretched_audios) != n_stems:
 		invalid_mixture = True
@@ -187,7 +192,7 @@ def stretch(data_home, sr, selected_stems, base_tempo, invalid_mixture, n_stems)
 	return stretched_audios, invalid_mixture
 
 def shift(sr, stretched_audios, invalid_mixture): 
-# check for empty mixture here
+
 	first_downbeats = []
 	final_audios = []
 
@@ -214,33 +219,8 @@ def shift(sr, stretched_audios, invalid_mixture):
 			final_audio = np.concatenate([silence, stretched_audios[i]])
 			final_audios.append(final_audio)
 
+			# checking for empty mixture
+			if len(final_audio) == 0:
+				invalid_mixture = True
+
 	return final_audios, invalid_mixture
-
-
-
-
-
-
-
-
-			
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
