@@ -161,15 +161,12 @@ if __name__ == "__main__":
 
 
     count = 0 # we might need to define these with args and set default values
-    n_stems = 3 # then over here we can just have n_stems = args.n_stems
-    n_harmonic = 2
-    n_percussive = 1
 
     while count < args.n_mixtures:
 
-        n_stems = 3 # then over here we can just have n_stems = args.n_stems
+        n_stems = 2 # then over here we can just have n_stems = args.n_stems
         n_harmonic = 1
-        n_percussive = 2
+        n_percussive = 1 # you need to fix where these are getting defined
 
         invalid_mixture = False
 

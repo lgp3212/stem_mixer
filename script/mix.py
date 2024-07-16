@@ -24,8 +24,15 @@ def generate(data_home, sr, duration, invalid_mixture, stretched_audios):
 	total_length = min_length
 
 	center = total_length // 2
-	start_sample = int(max(0, center - (duration * sr) // 2))
-	end_sample = int(min(total_length, center + (duration * sr) // 2))
+
+	start_sample = max(0, total_length - int(duration*sr))
+	end_sample = total_length
+
+	# MAYBE CHANGE IT SO THAT WE ARE GETTING LAST 10 SECONDS 
+
+	#start_sample = int(max(0, center - (duration * sr) // 2))
+	#end_sample = int(min(total_length, center + (duration * sr) // 2))
+
 
 
 	truncated_stems = []
@@ -35,12 +42,16 @@ def generate(data_home, sr, duration, invalid_mixture, stretched_audios):
 		audio = audio[start_sample:end_sample]
 		truncated_stems.append(audio)
 
+	print("truncated_stems ", truncated_stems)
+
 	length = len(truncated_stems[0])
 	mixture_audio = np.zeros(length) # initialization
 
 	for stem in truncated_stems:
 		if len(stem) == 0:
 			invalid_mixture = True
+
+		print("mean ", np.mean(stem))
 		mixture_audio += stem
 
 	if invalid_mixture == False: # if it passes all checks
