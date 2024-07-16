@@ -9,6 +9,9 @@ import numpy as np
 
 def generate(data_home, sr, duration, stretched_audios):
 
+	for stem in (stretched_audios):
+		print(len(stem))
+
 
 	mixture_folder = os.path.join(data_home, "mixtures")
 	os.makedirs(mixture_folder, exist_ok = True)
@@ -19,18 +22,30 @@ def generate(data_home, sr, duration, stretched_audios):
 
 	min_length = min(stretched_audios_lengths)
 	min_pos = stretched_audios_lengths.index(min_length)
-	mixture_audio = stretched_audios[min_pos]
 
-	total_length = len(mixture_audio)
+
+	total_length = min_length
+	print("min_length ", min_length)
+
+
 	center = total_length // 2
 	start_sample = int(max(0, center - (duration * sr) // 2))
 	end_sample = int(min(total_length, center + (duration * sr) // 2))
 
+
 	truncated_stems = []
 	for audio in stretched_audios:
+
 		audio = audio[:min_length]
 		audio = audio[start_sample:end_sample]
 		truncated_stems.append(audio)
+
+	mixture_audio = truncated_stems[0] # initialization
+
+	for k in range(1, len(truncated_stems)):
+		mixture_audio += truncated_stems[k]
+
+
 
 	mixture_id = str(uuid.uuid4())
 	individual_output_folder = os.path.join(mixture_folder, mixture_id)
@@ -39,13 +54,7 @@ def generate(data_home, sr, duration, stretched_audios):
 
 	for k in range(0, len(truncated_stems)):
 		sf.write(f"{individual_output_folder}/stem{k+1}.wav", truncated_stems[k], sr)
-		# check: what if mp3? or other type?
 
-		if(k != min_pos): # already accounted for
-
-			
-			mixture_audio = mixture_audio[start_sample:end_sample]
-			mixture_audio = mixture_audio + truncated_stems[k]
 
 
 	sf.write(f"{individual_output_folder}/mixture.wav", mixture_audio, sr)
@@ -83,7 +92,7 @@ def select_base_track(data_home):
 
 	return base_stem_name, base_tempo, tempo_bin, json_percussive, json_harmonic
 
-def select_top_tracks(base_stem_name, base_tempo, tempo_bin, json_percussive, json_harmonic, n_stems):
+def select_top_tracks(base_stem_name, base_tempo, tempo_bin, json_percussive, json_harmonic, n_stems, n_harmonic = 0, n_percussive = 0):
 
 	print("base stem name to begin ", base_stem_name)
 
@@ -117,8 +126,12 @@ def select_top_tracks(base_stem_name, base_tempo, tempo_bin, json_percussive, js
 	# right now just going to pick a harmonic track but i am keeping them separate above for when i add hp ratio later
 
 	# for ratio purposes
-	n_harmonic = n_stems - 1
-	n_percussive = 0
+	if n_harmonic == 0 and n_percussive == 0:
+		n_harmonic = n_stems // 2
+		n_percussive = n_stems - n_harmonic
+
+	print("number harmonic: ", n_harmonic)
+	print("number percussive: ", n_percussive)
 
 	# how to deal with index out of bound error?
 	# might want to create a flag for whether its a valid mixture or not. 
