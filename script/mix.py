@@ -217,7 +217,6 @@ def shift(sr, stretched_audios, invalid_mixture):
 	earliest_beat = min(first_downbeats)
 
 	earliest_beat_index = first_downbeats.index(earliest_beat)
-	print(earliest_beat_index)
 
 	immutable_audio = stretched_audios[earliest_beat_index]
 

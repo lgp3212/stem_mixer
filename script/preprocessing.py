@@ -159,12 +159,6 @@ if __name__ == "__main__":
         print(f"{args.dataset} is not a supported dataset.")
 
 
-    n_stems = 2 # should i add to kwargs?
-    base_stem_name, base_tempo, tempo_bin, json_percussive, json_harmonic = mix.select_base_track(args.data_home)
-    selected_stems, base_tempo, invalid_mixture = mix.select_top_tracks(base_stem_name, base_tempo, tempo_bin, json_percussive, json_harmonic, n_stems)
-    stretched_audios, invalid_mixture = mix.stretch(args.data_home, args.sr, selected_stems, base_tempo, invalid_mixture, n_stems)
-    final_audios, invalid_mixture = mix.shift(args.sr, stretched_audios, invalid_mixture)
-
     count = 0
     n_stems = 3
     while count < args.n_mixtures:
