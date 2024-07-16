@@ -162,29 +162,32 @@ if __name__ == "__main__":
 
     count = 0 # we might need to define these with args and set default values
     n_stems = 3 # then over here we can just have n_stems = args.n_stems
-    n_harmonic = 1
-    n_percussive = 2
+    n_harmonic = 2
+    n_percussive = 1
 
     while count < args.n_mixtures:
+
+        n_stems = 3 # then over here we can just have n_stems = args.n_stems
+        n_harmonic = 1
+        n_percussive = 2
+
         invalid_mixture = False
 
-        if n_percussive > 0: # checking to see if they have any percussive stems so we can choose our base
-            percussive = True
-        else:
-            percussive = False
+        base_stem_name, base_tempo, base_instrument, tempo_bin, json_percussive, json_harmonic, n_harmonic, n_percussive = mix.select_base_track(args.data_home, n_stems,n_harmonic, n_percussive)
 
-
-        base_stem_name, base_tempo, base_instrument, tempo_bin, json_percussive, json_harmonic = mix.select_base_track(args.data_home, percussive)
         selected_stems, base_tempo, invalid_mixture = mix.select_top_tracks(base_stem_name, base_tempo, base_instrument, tempo_bin, 
             json_percussive, json_harmonic, n_stems, n_harmonic, n_percussive)
+
         stretched_audios, invalid_mixture = mix.stretch(args.data_home, args.sr, selected_stems, base_tempo, invalid_mixture, n_stems) 
         final_audios, invalid_mixture = mix.shift(args.sr, stretched_audios, invalid_mixture)
 
-        if invalid_mixture == False: # using this to guard against any sort of error 
+        
+        invalid_mixture = mix.generate(args.data_home, args.sr, args.duration, invalid_mixture, final_audios)
+        
+        if not invalid_mixture:
             print("")
-            print("this is a valid mixture!")
+            print("this is a valid mix")
             print("")
-            mix.generate(args.data_home, args.sr, args.duration, final_audios)
             count += 1
 
         

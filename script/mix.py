@@ -7,7 +7,7 @@ import librosa
 import json
 import numpy as np
 
-def generate(data_home, sr, duration, stretched_audios):
+def generate(data_home, sr, duration, invalid_mixture, stretched_audios):
 
 
 	mixture_folder = os.path.join(data_home, "mixtures")
@@ -39,22 +39,36 @@ def generate(data_home, sr, duration, stretched_audios):
 	mixture_audio = np.zeros(length) # initialization
 
 	for stem in truncated_stems:
+		if len(stem) == 0:
+			invalid_mixture = True
 		mixture_audio += stem
 
+	if invalid_mixture == False: # if it passes all checks
+
+		mixture_id = str(uuid.uuid4())
+		individual_output_folder = os.path.join(mixture_folder, mixture_id)
+		os.makedirs(individual_output_folder, exist_ok=True)
 
 
-	mixture_id = str(uuid.uuid4())
-	individual_output_folder = os.path.join(mixture_folder, mixture_id)
-	os.makedirs(individual_output_folder, exist_ok=True)
+		for k in range(0, len(truncated_stems)):
+			sf.write(f"{individual_output_folder}/stem{k+1}.wav", truncated_stems[k], sr)
 
 
-	for k in range(0, len(truncated_stems)):
-		sf.write(f"{individual_output_folder}/stem{k+1}.wav", truncated_stems[k], sr)
+		sf.write(f"{individual_output_folder}/mixture.wav", mixture_audio, sr)
 
+	return invalid_mixture
 
-	sf.write(f"{individual_output_folder}/mixture.wav", mixture_audio, sr)
+def select_base_track(data_home, n_stems, n_harmonic = 0, n_percussive = 0):
 
-def select_base_track(data_home, percussive):
+	if n_harmonic == 0 and n_percussive == 0: # ensuring n_harm and n_perc values are set
+		n_harmonic = n_stems // 2
+		n_percussive = n_stems - n_harmonic
+
+	if n_percussive > 0: # checking to see if they have any percussive stems so we can choose our base
+		percussive = True
+	else:
+		percussive = False
+
 	path_to_stems = os.path.join(data_home, "stems")
 
 	json_files = glob.glob(os.path.join(path_to_stems, "*.json"))
@@ -74,9 +88,11 @@ def select_base_track(data_home, percussive):
 	# but what if they do not want any percussive instruments?
 	if percussive == True:
 		random_json_file = random.sample(json_percussive, 1)[0]
+		n_percussive = n_percussive - 1
 
 	else:
 		random_json_file = random.sample(json_harmonic, 1)[0]
+		n_harmonic = n_harmonic - 1
 
 	with open(random_json_file, "r") as f:
 		data = json.load(f)
@@ -93,9 +109,9 @@ def select_base_track(data_home, percussive):
 	print("tempo base: ", base_tempo)
 	print("tempo bin: ", tempo_bin)
 
-	return base_stem_name, base_tempo, base_instrument, tempo_bin, json_percussive, json_harmonic
+	return base_stem_name, base_tempo, base_instrument, tempo_bin, json_percussive, json_harmonic, n_harmonic, n_percussive
 
-def select_top_tracks(base_stem_name, base_tempo, base_instrument, tempo_bin, json_percussive, json_harmonic, n_stems, n_harmonic = 0, n_percussive = 0):
+def select_top_tracks(base_stem_name, base_tempo, base_instrument, tempo_bin, json_percussive, json_harmonic, n_stems, n_harmonic, n_percussive):
 
 	print("base stem name to begin ", base_stem_name)
 
@@ -130,12 +146,6 @@ def select_top_tracks(base_stem_name, base_tempo, base_instrument, tempo_bin, js
 					tempo_bin_harmonic[new_stem_name] = [data.get("tempo"), data.get("instrument_name")]
 					#tempo_bin_percussive[instrument_name] = data.get("instrument_name")
 
-	# right now just going to pick a harmonic track but i am keeping them separate above for when i add hp ratio later
-
-	# for ratio purposes
-	if n_harmonic == 0 and n_percussive == 0:
-		n_harmonic = n_stems // 2
-		n_percussive = n_stems - n_harmonic
 
 	print("number harmonic: ", n_harmonic)
 	print("number percussive: ", n_percussive)
@@ -255,10 +265,6 @@ def shift(sr, stretched_audios, invalid_mixture):
 
 			final_audio = np.concatenate([silence, stretched_audios[i]])
 			final_audios.append(final_audio)
-
-			# checking for empty mixture
-			if len(final_audio) == 0:
-				invalid_mixture = True
 
 
 	return final_audios, invalid_mixture
