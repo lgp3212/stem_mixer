@@ -55,7 +55,8 @@ def brid(file_path):
         "partido alto" : 100.0,
         "samba-enredo" : 130.0,
         "marcha" : 120.0,
-        "capoeira" : 65.0
+        "capoeira" : 65.0,
+        "other" : None
     }
 
     style = None
@@ -165,7 +166,7 @@ if __name__ == "__main__":
         invalid_mixture = False
         base_stem_name, base_tempo, tempo_bin, json_percussive, json_harmonic = mix.select_base_track(args.data_home)
         selected_stems, base_tempo, invalid_mixture = mix.select_top_tracks(base_stem_name, base_tempo, tempo_bin, 
-            json_percussive, json_harmonic, n_stems, n_percussive = 3)
+            json_percussive, json_harmonic, n_stems, n_harmonic = 1, n_percussive = 2)
         stretched_audios, invalid_mixture = mix.stretch(args.data_home, args.sr, selected_stems, base_tempo, invalid_mixture, n_stems) 
         final_audios, invalid_mixture = mix.shift(args.sr, stretched_audios, invalid_mixture)
 

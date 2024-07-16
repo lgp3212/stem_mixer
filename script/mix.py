@@ -9,9 +9,6 @@ import numpy as np
 
 def generate(data_home, sr, duration, stretched_audios):
 
-	for stem in (stretched_audios):
-		print(len(stem))
-
 
 	mixture_folder = os.path.join(data_home, "mixtures")
 	os.makedirs(mixture_folder, exist_ok = True)
@@ -25,8 +22,6 @@ def generate(data_home, sr, duration, stretched_audios):
 
 
 	total_length = min_length
-	print("min_length ", min_length)
-
 
 	center = total_length // 2
 	start_sample = int(max(0, center - (duration * sr) // 2))
@@ -40,10 +35,11 @@ def generate(data_home, sr, duration, stretched_audios):
 		audio = audio[start_sample:end_sample]
 		truncated_stems.append(audio)
 
-	mixture_audio = truncated_stems[0] # initialization
+	length = len(truncated_stems[0])
+	mixture_audio = np.zeros(length) # initialization
 
-	for k in range(1, len(truncated_stems)):
-		mixture_audio += truncated_stems[k]
+	for stem in truncated_stems:
+		mixture_audio += stem
 
 
 
@@ -157,6 +153,8 @@ def select_top_tracks(base_stem_name, base_tempo, tempo_bin, json_percussive, js
 			tempo = tempo_bin_percussive[new_stem_name]
 			selected_stems[new_stem_name] = tempo
 
+		print("selected stems: ", selected_stems.keys())
+
 	except ValueError as e:
 		invalid_mixture = True
 
@@ -234,5 +232,6 @@ def shift(sr, stretched_audios, invalid_mixture):
 			# checking for empty mixture
 			if len(final_audio) == 0:
 				invalid_mixture = True
+
 
 	return final_audios, invalid_mixture
