@@ -52,10 +52,9 @@ def generate(data_home, sr, duration, stretched_audios):
 		sf.write(f"{individual_output_folder}/stem{k+1}.wav", truncated_stems[k], sr)
 
 
-
 	sf.write(f"{individual_output_folder}/mixture.wav", mixture_audio, sr)
 
-def select_base_track(data_home):
+def select_base_track(data_home, percussive):
 	path_to_stems = os.path.join(data_home, "stems")
 
 	json_files = glob.glob(os.path.join(path_to_stems, "*.json"))
@@ -72,11 +71,19 @@ def select_base_track(data_home):
 
 	audio_files = glob.glob(os.path.join(path_to_stems, "*.wav")) + glob.glob(os.path.join(path_to_stems, "*.mp3"))
 
-	random_json_file = random.sample(json_percussive, 1)[0]
+	# but what if they do not want any percussive instruments?
+	if percussive == True:
+		random_json_file = random.sample(json_percussive, 1)[0]
+
+	else:
+		random_json_file = random.sample(json_harmonic, 1)[0]
+
 	with open(random_json_file, "r") as f:
-			data = json.load(f)
-			base_tempo = data.get("tempo")
-			tempo_bin = data.get("tempo bin")
+		data = json.load(f)
+		base_tempo = data.get("tempo")
+		tempo_bin = data.get("tempo bin")
+		base_instrument = data.get("instrument_name")
+
 
 
 	split_name = os.path.basename(random_json_file)
@@ -86,9 +93,9 @@ def select_base_track(data_home):
 	print("tempo base: ", base_tempo)
 	print("tempo bin: ", tempo_bin)
 
-	return base_stem_name, base_tempo, tempo_bin, json_percussive, json_harmonic
+	return base_stem_name, base_tempo, base_instrument, tempo_bin, json_percussive, json_harmonic
 
-def select_top_tracks(base_stem_name, base_tempo, tempo_bin, json_percussive, json_harmonic, n_stems, n_harmonic = 0, n_percussive = 0):
+def select_top_tracks(base_stem_name, base_tempo, base_instrument, tempo_bin, json_percussive, json_harmonic, n_stems, n_harmonic = 0, n_percussive = 0):
 
 	print("base stem name to begin ", base_stem_name)
 
@@ -103,12 +110,15 @@ def select_top_tracks(base_stem_name, base_tempo, tempo_bin, json_percussive, js
 	for file in json_percussive:
 		with open(file, "r") as f:
 			data = json.load(f)
+
 			if data.get("tempo bin") == tempo_bin:
 				# checking that it is not file already picked
 				split_name = os.path.basename(file)
 				new_stem_name, _ = os.path.splitext(split_name)
 				if new_stem_name != base_stem_name:
-					tempo_bin_percussive[new_stem_name] = data.get("tempo")
+					tempo_bin_percussive[new_stem_name] = [data.get("tempo"), data.get("instrument_name")]
+					# print("tempo_bin_percussive: ", tempo_bin_percussive)
+					#tempo_bin_percussive["instrument_name"] = data.get("instrument_name")
 
 	for file in json_harmonic:
 		with open(file, "r") as f:
@@ -117,7 +127,8 @@ def select_top_tracks(base_stem_name, base_tempo, tempo_bin, json_percussive, js
 				split_name = os.path.basename(file)
 				new_stem_name, _ = os.path.splitext(split_name)
 				if new_stem_name != base_stem_name:
-					tempo_bin_harmonic[new_stem_name] = data.get("tempo")
+					tempo_bin_harmonic[new_stem_name] = [data.get("tempo"), data.get("instrument_name")]
+					#tempo_bin_percussive[instrument_name] = data.get("instrument_name")
 
 	# right now just going to pick a harmonic track but i am keeping them separate above for when i add hp ratio later
 
@@ -132,7 +143,7 @@ def select_top_tracks(base_stem_name, base_tempo, tempo_bin, json_percussive, js
 	# how to deal with index out of bound error?
 	# might want to create a flag for whether its a valid mixture or not. 
 	selected_stems = {}
-	selected_stems[base_stem_name] = base_tempo
+	selected_stems[base_stem_name] = [base_tempo, base_instrument]
 
 	try:
 		tempo_bin_harmonic_keys = list(tempo_bin_harmonic.keys())
@@ -141,24 +152,40 @@ def select_top_tracks(base_stem_name, base_tempo, tempo_bin, json_percussive, js
 		tempo_bin_percussive_keys = list(tempo_bin_percussive.keys())
 		percussive_stems = random.sample(tempo_bin_percussive_keys, n_percussive)
 
+		print("tempo_bin_harmonic ", tempo_bin_harmonic)
+
 		for stem in harmonic_stems:
 			split_name = os.path.basename(stem)
 			new_stem_name, _ = os.path.splitext(split_name)
-			tempo = tempo_bin_harmonic[new_stem_name]
-			selected_stems[new_stem_name] = tempo
+			tempo = tempo_bin_harmonic[new_stem_name][0]
+			instrument_name = tempo_bin_harmonic[new_stem_name][1]
+			selected_stems[new_stem_name] = [tempo, instrument_name]
 
 		for stem in percussive_stems:
 			split_name = os.path.basename(stem)
 			new_stem_name, _ = os.path.splitext(split_name)
-			tempo = tempo_bin_percussive[new_stem_name]
-			selected_stems[new_stem_name] = tempo
+			tempo = tempo_bin_percussive[new_stem_name][0]
+			instrument_name = tempo_bin_percussive[new_stem_name][1]
+			selected_stems[new_stem_name] = [tempo, instrument_name]
 
-		print("selected stems: ", selected_stems.keys())
+
+		print("selected stems: ", selected_stems)
+
+		list_of_instruments = []
+
+		for stem in selected_stems.keys():
+			list_of_instruments.append(selected_stems[stem][1])
+
+		print(list_of_instruments)	
+
+		if len(list_of_instruments) != len(set(list_of_instruments)): # repeated instrument
+			invalid_mixture = True
 
 	except ValueError as e:
 		invalid_mixture = True
 
-	return selected_stems, base_tempo, invalid_mixture
+	return selected_stems, base_tempo, invalid_mixture # should we make it so this process cuts quicker 
+	# when invalid
 
 def stretch(data_home, sr, selected_stems, base_tempo, invalid_mixture, n_stems):
 
@@ -173,7 +200,7 @@ def stretch(data_home, sr, selected_stems, base_tempo, invalid_mixture, n_stems)
 
 		for i in range(1, n_stems):
 			stem_to_stretch = selected_stems_keys[i]
-			current_tempo = selected_stems[stem_to_stretch]
+			current_tempo = selected_stems[stem_to_stretch][0] # extracting tempo from dict
 
 			for file in audio_files:
 				if stem_to_stretch in file:
