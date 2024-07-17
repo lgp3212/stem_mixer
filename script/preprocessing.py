@@ -173,7 +173,8 @@ if __name__ == "__main__":
 
 
     count = 0
-    args.n_mixtures = 2
+    args.n_mixtures = 6
+    args.n_stems = 2
 
     while count < args.n_mixtures: # count can only increase if valid mixture is made, lots of checks in place
 
