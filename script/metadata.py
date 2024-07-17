@@ -23,10 +23,13 @@ def extraction(stem_file_path, **kwargs):
     metadata.pop("track_files", None)
     metadata.pop("duration", None)
     metadata.pop("n_mixtures", None)
+    metadata.pop("n_harmonic", None)
+    metadata.pop("n_percussive", None)
+    metadata.pop("n_stems", None)
 
     if metadata["tempo"] is None:
         print("tempo is None. calculating...")
-        tempo = get_tempo(stem_file_path, sr=kwargs["sr"])
+        tempo = get_tempo(stem_file_path, sr=kwargs["sr"]) # if tempo is none we extract and add to metadata 
         metadata["tempo"] = tempo
 
 
@@ -39,7 +42,7 @@ def extraction(stem_file_path, **kwargs):
             print("json file created")
 
 
-def get_tempo(stem_path, sr):
+def get_tempo(stem_path, sr): 
 
     try:
         audio_file, sr = librosa.load(stem_path, sr=sr, mono=True)
@@ -53,7 +56,7 @@ def get_tempo(stem_path, sr):
 
     return tempo
 
-def percussive_harmonic(stem_path, sr):
+def percussive_harmonic(stem_path, sr): # in the works: extracting percussive / harmonic component if not provided
     try:
         audio_file, sr = librosa.load(stem_path, sr=sr, mono=True)
         audio_norm = librosa.util.normalize(audio_file)

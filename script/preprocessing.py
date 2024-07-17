@@ -3,7 +3,7 @@ import os
 import metadata
 import mix
 
-def brid(file_path):
+def brid(file_path): # setting parameters for brid data
     """
     BRID DATASET PRE-PROCESSING
 
@@ -74,7 +74,7 @@ def brid(file_path):
     return tempo, instrument_name, key, sound_class
 
 
-def musdb(file_path):
+def musdb(file_path): # setting parameters for musdb data
     """
     MUSDB DATASET PRE-PROCESSING
 
@@ -124,12 +124,20 @@ if __name__ == "__main__":
             prog="PreprocessingHelper",
             description="This script creates metadata for BRID and/or MUSDB"
             )
+
+    # arguments. required --> data home, dataset (if using preprocessing)
     parser.add_argument("--data_home", required=True, help="pathway to where is data is stored")
     parser.add_argument("--dataset", required=True, help="supported datasets: BRID (enter 'brid') and MUSDB (enter 'musdb')")
     parser.add_argument("--track_files", help="txt file with track names")
+    # need to develop this still
+
     parser.add_argument("--sr", required=False, default=44100, help="sample rate, default is 44100Hz")
     parser.add_argument("--duration", required=False, default=10.0, help="mixture duration, default is 10 seconds")
     parser.add_argument("--n_mixtures", required=False, default=5, help="number of mixtures created")
+    parser.add_argument("--n_stems", required=False, default=3, help="number of stems pertaining to each mix")
+    parser.add_argument("--n_harmonic", required=False, default=0, help="number of harmonic stems")
+    parser.add_argument("--n_percussive", required=False, default=0, help="number of percussive stems")
+
 
     args = parser.parse_args()
     kwargs = vars(args)
@@ -141,6 +149,8 @@ if __name__ == "__main__":
             for file in files:
                 file_path = os.path.join(root, file)
                 args.tempo, args.instrument_name, args.key, args.sound_class = brid(file_path)
+
+                # extracting unique metadata for all brid .wav files
                 if file_path.endswith(".wav") or file_path.endswith(".mp3"):
                     metadata.extraction(file_path, **kwargs)
 
@@ -152,6 +162,8 @@ if __name__ == "__main__":
                 file_path = os.path.join(root, file)
                 args.tempo, args.instrument_name, args.key, args.sound_class = musdb(file_path)
                 print("instrument name ",args.instrument_name)
+
+                # extracting unique metadata for all musdb .wav files
                 if file_path.endswith(".wav") or file_path.endswith(".mp3"):
                     metadata.extraction(file_path, **kwargs)
 
@@ -160,26 +172,24 @@ if __name__ == "__main__":
         print(f"{args.dataset} is not a supported dataset.")
 
 
-    count = 0 # we might need to define these with args and set default values
+    count = 0
+    args.n_mixtures = 2
 
-    while count < args.n_mixtures:
-
-        n_stems = 2 # then over here we can just have n_stems = args.n_stems
-        n_harmonic = 1
-        n_percussive = 1 # you need to fix where these are getting defined
+    while count < args.n_mixtures: # count can only increase if valid mixture is made, lots of checks in place
 
         invalid_mixture = False
 
-        base_stem_name, base_tempo, base_instrument, tempo_bin, json_percussive, json_harmonic, n_harmonic, n_percussive = mix.select_base_track(args.data_home, n_stems,n_harmonic, n_percussive)
+        base_stem_name, base_tempo, base_instrument, tempo_bin, json_percussive, json_harmonic, n_harmonic, n_percussive = mix.select_base_track(args.data_home, args.n_stems, args.n_harmonic, args.n_percussive)
 
         selected_stems, base_tempo, invalid_mixture = mix.select_top_tracks(base_stem_name, base_tempo, base_instrument, tempo_bin, 
-            json_percussive, json_harmonic, n_stems, n_harmonic, n_percussive)
+            json_percussive, json_harmonic, args.n_stems, n_harmonic, n_percussive)
 
-        stretched_audios, invalid_mixture = mix.stretch(args.data_home, args.sr, selected_stems, base_tempo, invalid_mixture, n_stems) 
+        stretched_audios, invalid_mixture = mix.stretch(args.data_home, args.sr, selected_stems, base_tempo, invalid_mixture, args.n_stems) 
         final_audios, invalid_mixture = mix.shift(args.sr, stretched_audios, invalid_mixture)
 
         
         invalid_mixture = mix.generate(args.data_home, args.sr, args.duration, invalid_mixture, final_audios)
+        # final function returns if it is a valid mixture or not. if not, it repeats again
         
         if not invalid_mixture:
             print("")

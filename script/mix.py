@@ -28,12 +28,6 @@ def generate(data_home, sr, duration, invalid_mixture, stretched_audios):
 	start_sample = max(0, total_length - int(duration*sr))
 	end_sample = total_length
 
-	# MAYBE CHANGE IT SO THAT WE ARE GETTING LAST 10 SECONDS 
-
-	#start_sample = int(max(0, center - (duration * sr) // 2))
-	#end_sample = int(min(total_length, center + (duration * sr) // 2))
-
-
 
 	truncated_stems = []
 	for audio in stretched_audios:
@@ -42,16 +36,12 @@ def generate(data_home, sr, duration, invalid_mixture, stretched_audios):
 		audio = audio[start_sample:end_sample]
 		truncated_stems.append(audio)
 
-	print("truncated_stems ", truncated_stems)
-
 	length = len(truncated_stems[0])
 	mixture_audio = np.zeros(length) # initialization
 
 	for stem in truncated_stems:
 		if len(stem) == 0:
 			invalid_mixture = True
-
-		print("mean ", np.mean(stem))
 		mixture_audio += stem
 
 	if invalid_mixture == False: # if it passes all checks
@@ -69,9 +59,14 @@ def generate(data_home, sr, duration, invalid_mixture, stretched_audios):
 
 	return invalid_mixture
 
-def select_base_track(data_home, n_stems, n_harmonic = 0, n_percussive = 0):
+def select_base_track(data_home, n_stems, n_harmonic, n_percussive):
 
-	if n_harmonic == 0 and n_percussive == 0: # ensuring n_harm and n_perc values are set
+	# first check to make sure user has not provided n harm and n perc such that n_harm + n_perc != n_total
+	if (n_harmonic + n_percussive) != n_stems:
+		n_harmonic = 0
+		n_percussive = 0
+
+	if n_harmonic == 0 and n_percussive == 0: # if default provided, ensuring n_harm and n_perc values are set
 		n_harmonic = n_stems // 2
 		n_percussive = n_stems - n_harmonic
 
@@ -86,7 +81,7 @@ def select_base_track(data_home, n_stems, n_harmonic = 0, n_percussive = 0):
 	json_percussive = []
 	json_harmonic= []
 
-	for file in json_files:
+	for file in json_files: # splitting jsons into harmonic and percussive
 		with open(file, "r") as f:
 			data = json.load(f)
 			if data.get("sound_class") == "percussive":
@@ -116,36 +111,31 @@ def select_base_track(data_home, n_stems, n_harmonic = 0, n_percussive = 0):
 	split_name = os.path.basename(random_json_file)
 	base_stem_name, _ = os.path.splitext(split_name)
 
-	print("stem: ", base_stem_name)
-	print("tempo base: ", base_tempo)
-	print("tempo bin: ", tempo_bin)
-
 	return base_stem_name, base_tempo, base_instrument, tempo_bin, json_percussive, json_harmonic, n_harmonic, n_percussive
 
 def select_top_tracks(base_stem_name, base_tempo, base_instrument, tempo_bin, json_percussive, json_harmonic, n_stems, n_harmonic, n_percussive):
 
-	print("base stem name to begin ", base_stem_name)
+	print("trying: ", base_stem_name)
 
-	invalid_mixture = False
+	invalid_mixture = False # initializing invalid mixture
 
-	# need to make sure no repetition
-	# return list of wav files. do we need list of json files?
-
-	tempo_bin_harmonic = {}
+	tempo_bin_harmonic = {} # storing metadata for harmonic and percussive stems
 	tempo_bin_percussive = {}
+
+	# adding all harmonic and percussive stems to respective dicts if they are in range of target tempo
 
 	for file in json_percussive:
 		with open(file, "r") as f:
 			data = json.load(f)
 
 			if data.get("tempo bin") == tempo_bin:
+
 				# checking that it is not file already picked
 				split_name = os.path.basename(file)
 				new_stem_name, _ = os.path.splitext(split_name)
 				if new_stem_name != base_stem_name:
+					# getting original tempo and getting instrument name as to not repeat
 					tempo_bin_percussive[new_stem_name] = [data.get("tempo"), data.get("instrument_name")]
-					# print("tempo_bin_percussive: ", tempo_bin_percussive)
-					#tempo_bin_percussive["instrument_name"] = data.get("instrument_name")
 
 	for file in json_harmonic:
 		with open(file, "r") as f:
@@ -155,11 +145,6 @@ def select_top_tracks(base_stem_name, base_tempo, base_instrument, tempo_bin, js
 				new_stem_name, _ = os.path.splitext(split_name)
 				if new_stem_name != base_stem_name:
 					tempo_bin_harmonic[new_stem_name] = [data.get("tempo"), data.get("instrument_name")]
-					#tempo_bin_percussive[instrument_name] = data.get("instrument_name")
-
-
-	print("number harmonic: ", n_harmonic)
-	print("number percussive: ", n_percussive)
 
 	# how to deal with index out of bound error?
 	# might want to create a flag for whether its a valid mixture or not. 
@@ -172,8 +157,6 @@ def select_top_tracks(base_stem_name, base_tempo, base_instrument, tempo_bin, js
 
 		tempo_bin_percussive_keys = list(tempo_bin_percussive.keys())
 		percussive_stems = random.sample(tempo_bin_percussive_keys, n_percussive)
-
-		print("tempo_bin_harmonic ", tempo_bin_harmonic)
 
 		for stem in harmonic_stems:
 			split_name = os.path.basename(stem)
@@ -228,8 +211,10 @@ def stretch(data_home, sr, selected_stems, base_tempo, invalid_mixture, n_stems)
 					wav_file = file
 
 			audio, sr = librosa.load(wav_file, sr=sr)
+			audio_norm = librosa.util.normalize(audio)
+
 			new_rate = float(target_tempo / current_tempo)
-			stretched_audio = librosa.effects.time_stretch(audio, rate = new_rate)
+			stretched_audio = librosa.effects.time_stretch(audio_norm, rate = new_rate)
 
 			stretched_audios.append(stretched_audio)
 
@@ -260,22 +245,28 @@ def shift(sr, stretched_audios, invalid_mixture):
 		downbeat_times = librosa.frames_to_time(beat_times, sr=sr)
 		first_downbeats.append(downbeat_times[0])
 
-	earliest_beat = min(first_downbeats)
+	latest_beat = max(first_downbeats)
 
-	earliest_beat_index = first_downbeats.index(earliest_beat)
+	latest_beat_index = first_downbeats.index(latest_beat)
 
-	immutable_audio = stretched_audios[earliest_beat_index]
+	immutable_audio = stretched_audios[latest_beat_index]
 
 	final_audios.append(immutable_audio)
 
 	for i in range(0, len(stretched_audios)):
-		if i != earliest_beat_index:
-			shift_difference = np.abs(first_downbeats[i] - earliest_beat)
+		if i != latest_beat_index:
+			shift_difference = np.abs(first_downbeats[i] - latest_beat)
 			silence_samples = int(shift_difference * sr)
 			silence = np.zeros(silence_samples)
 
 			final_audio = np.concatenate([silence, stretched_audios[i]])
-			final_audios.append(final_audio)
 
+			# rechecking downbeats after shift
+			print("rechecking downbeat alignment")
+			_, beat_times = librosa.beat.beat_track(y=final_audio, sr=sr)
+			downbeat_times = librosa.frames_to_time(beat_times, sr=sr)
+			print(downbeat_times[0])
+
+			final_audios.append(final_audio)
 
 	return final_audios, invalid_mixture
