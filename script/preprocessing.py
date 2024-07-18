@@ -22,53 +22,35 @@ def brid(file_path):
     key = None
     sound_class = "percussive"
 
-    instrument_folders = {
-            "-PD" : "pandeiro",
-            "-TB": "tamborim",
-            "-RR": "reco-reco",
-            "-CX": "caixa",
-            "-RP": "repique",
-            "-CU": "cuica",
-            "-AG": "agogo",
-            "-SK": "shaker",
-            "-TT": "tanta",
-            "-SU": "surdo"}
-    instrument_name = None
-    for suffix in instrument_folders:
-        if suffix in file_path:
-            instrument_name = instrument_folders[suffix]
+    suffix_list = file_path.split("-")
 
-    folders = ["samba","marcha","partido alto","samba-enredo","other","capoeira"]
+    suffix_to_instr = {
+            "PD" : "pandeiro",
+            "TB": "tamborim",
+            "RR": "reco-reco",
+            "CX": "caixa",
+            "RP": "repique",
+            "CU": "cuica",
+            "AG": "agogo",
+            "SK": "shaker",
+            "TT": "tanta",
+            "SU": "surdo" 
+            }
 
-    style_dict = {
-        "SA.wav" : "samba",
-        "PA.wav": "partido alto",
-        "CA.wav": "capoeira",
-        "SE.wav": "samba-enredo",
-        "MA.wav": "marcha",
-        "OT.wav": "other"
+    instr_suffix = suffix_list[1][0:2]
+    instrument_name = suffix_to_instr.get(instr_suffix, None)
+
+    suffix_to_tempo = {
+        "SA.wav" : 80.0,
+        "PA.wav": 100.0,
+        "CA.wav": 65.0,
+        "SE.wav": 130.0,
+        "MA.wav": 120.0
     }
 
-    style_to_tempo = {
-        "samba" : 80.0,
-        "partido alto" : 100.0,
-        "samba-enredo" : 130.0,
-        "marcha" : 120.0,
-        "capoeira" : 65.0,
-        "other" : None
-    }
-
-    style = None
-
-    for suffix in style_dict:
-        if suffix in file_path:
-            style = style_dict[suffix]
-
-    if style is None:
-        tempo = None
-
-    else:
-        tempo = style_to_tempo[style]
+    # from dataset documentation, brid stems adhere to the following structure: [GID#] MX-YY-ZZ.wav
+    style_suffix = suffix_list[-1]
+    tempo = suffix_to_tempo.get(style_suffix, None)
 
     return tempo, instrument_name, key, sound_class
 
