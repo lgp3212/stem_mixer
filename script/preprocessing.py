@@ -81,7 +81,7 @@ def musdb(file_path):
     sound_class = None
 
     # removing .wav extension
-    stem_name = file_path.split(" - ")[-1][0:-4] 
+    stem_name = file_path.split("-")[-1].strip()[0:-4]
 
     instrument_name = stem_name if stem_name != "other" else None
 
@@ -102,31 +102,23 @@ if __name__ == "__main__":
 
     # arguments. required --> data home, dataset (if using preprocessing)
     parser.add_argument("--data_home", required=True, help="pathway to where is data is stored")
-    parser.add_argument("--dataset", required=True, help="supported datasets: BRID (enter 'brid') and MUSDB (enter 'musdb')")
+    parser.add_argument("--dataset", required=True, choices=["brid","musdb"], help="supported datasets: BRID (enter 'brid') and MUSDB (enter 'musdb')")
     parser.add_argument("--track_files", help="txt file with track names")
     # need to develop this still
 
     args = parser.parse_args()
     kwargs = vars(args)
 
-    if args.dataset == "brid":
-        for root, dirs, files in os.walk(args.data_home):
-            for file in files:
-                file_path = os.path.join(root, file)
-                args.tempo, args.instrument_name, args.key, args.sound_class = brid(file_path)
+    preprocessing_functions = {
+        "brid" : brid,
+        "musdb" : musdb
+    }
 
-                # extracting unique metadata for all brid .wav files
-                if file_path.endswith(".wav") or file_path.endswith(".mp3"):
-                    metadata.extraction(file_path, **kwargs)
-    elif args.dataset == "musdb":
-        for root, dirs, files in os.walk(args.data_home):
-            for file in files:
-                file_path = os.path.join(root, file)
-                args.tempo, args.instrument_name, args.key, args.sound_class = musdb(file_path)
-                print("instrument name ",args.instrument_name)
+    for root, dirs, files in os.walk(args.data_home):
+        for file in files:
+            file_path = os.path.join(root, file)
+            args.tempo, args.instrument_name, args.key, args.sound_class = preprocessing_functions[args.dataset](file_path)
 
-                # extracting unique metadata for all musdb .wav files
-                if file_path.endswith(".wav") or file_path.endswith(".mp3"):
-                    metadata.extraction(file_path, **kwargs)
-    else:
-        raise ValueError(f"{args.dataset} is not a supported dataset. Options are \"brid\" and \"musdb\"")
+            # extracting unique metadata for all brid .wav files
+            if file_path.endswith(".wav") or file_path.endswith(".mp3"):
+                metadata.extraction(file_path, **kwargs)
