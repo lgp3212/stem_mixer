@@ -1,22 +1,21 @@
 import argparse
 import os
 import metadata
-import mix
 
-def brid(file_path): # setting parameters for brid data
+def brid(file_path):
     """
     BRID DATASET PRE-PROCESSING
 
-    Takes file path to BRID stems and assigns instrument variable based on file name
+    Takes file path to BRID stem and assigns instrument variable based on file name
 
     Parameters:
-    file_path (str) : path to stems
+        file_path (str) : path to stem
 
     Returns:
-    tempo (float) : tempo of stem based on style
-    instrument_name (str) : name of BRID instrument if exists
-    key : null
-    sound_class (str) : sound_class of BRID stem, "percussive"
+        tempo (float) : tempo of stem based on style
+        instrument_name (str) : name of BRID instrument if exists
+        key : null
+        sound_class (str) : sound_class of BRID stem, "percussive"
     """
 
     key = None
@@ -37,7 +36,6 @@ def brid(file_path): # setting parameters for brid data
     for suffix in instrument_folders:
         if suffix in file_path:
             instrument_name = instrument_folders[suffix]
-
 
     folders = ["samba","marcha","partido alto","samba-enredo","other","capoeira"]
 
@@ -74,11 +72,11 @@ def brid(file_path): # setting parameters for brid data
     return tempo, instrument_name, key, sound_class
 
 
-def musdb(file_path): # setting parameters for musdb data
+def musdb(file_path):
     """
     MUSDB DATASET PRE-PROCESSING
 
-    Takes file path to MUSDB stems and assigns variables based on file name
+    Takes file path to MUSDB stem and assigns variables based on file name
 
     Note: to make use of this function, save MUSDB stems as "artist - track_title - stem_title.wav"
     where stem_title is "vocals", "drums", "bass", or "other"
@@ -86,13 +84,13 @@ def musdb(file_path): # setting parameters for musdb data
     i.e. "Bobby Nobody - Stich Up - drums.wav"
 
     Parameters:
-    file_path (str) : path to stems
+        file_path (str) : path to stem
 
     Returns:
-    tempo : null
-    instrument_name (str) : name of MUSDB instrument / type if exists
-    key : null
-    sound_class : sound class of stem if instrument_name exists and is "vocals", "drums", "bass", or "other"
+        tempo : null
+        instrument_name (str) : name of MUSDB instrument / type if exists
+        key : null
+        sound_class : sound class of stem if instrument_name exists and is "vocals", "drums", "bass", or "other"
     """
 
     key = None
@@ -131,14 +129,6 @@ if __name__ == "__main__":
     parser.add_argument("--track_files", help="txt file with track names")
     # need to develop this still
 
-    parser.add_argument("--sr", required=False, default=44100, help="sample rate, default is 44100Hz")
-    parser.add_argument("--duration", required=False, default=10.0, help="mixture duration, default is 10 seconds")
-    parser.add_argument("--n_mixtures", required=False, default=5, help="number of mixtures created")
-    parser.add_argument("--n_stems", required=False, default=3, help="number of stems pertaining to each mix")
-    parser.add_argument("--n_harmonic", required=False, default=0, help="number of harmonic stems")
-    parser.add_argument("--n_percussive", required=False, default=0, help="number of percussive stems")
-
-
     args = parser.parse_args()
     kwargs = vars(args)
 
@@ -151,8 +141,6 @@ if __name__ == "__main__":
                 # extracting unique metadata for all brid .wav files
                 if file_path.endswith(".wav") or file_path.endswith(".mp3"):
                     metadata.extraction(file_path, **kwargs)
-
-
     elif args.dataset == "musdb":
         for root, dirs, files in os.walk(args.data_home):
             for file in files:
@@ -164,4 +152,4 @@ if __name__ == "__main__":
                 if file_path.endswith(".wav") or file_path.endswith(".mp3"):
                     metadata.extraction(file_path, **kwargs)
     else:
-        print(f"{args.dataset} is not a supported dataset.")
+        raise ValueError(f"{args.dataset} is not a supported dataset. Options are \"brid\" and \"musdb\"")
