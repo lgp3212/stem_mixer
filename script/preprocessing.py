@@ -78,25 +78,19 @@ def musdb(file_path):
 
     key = None
     tempo = None
-    instrument_name = None
     sound_class = None
 
-    type_folders = ["vocals", "drums", "bass", "other"]
+    # removing .wav extension
+    stem_name = file_path.split(" - ")[-1][0:-4] 
 
-    for name in type_folders:
-        if name in file_path:
+    instrument_name = stem_name if stem_name != "other" else None
 
-            instrument_name = name
-
-            if instrument_name == "vocals":
-                sound_class = "vocals"
-            elif instrument_name == "drums":
-                sound_class = "percussive"
-            elif instrument_name == "bass" or instrument_name == "other":
-                sound_class = "harmonic"
-            else:
-                sound_class = None
-
+    if stem_name == "vocals":
+        sound_class = "vocals"
+    elif stem_name == "drums":
+        sound_class = "percussive"
+    elif stem_name == "bass" or stem_name == "other":
+        sound_class = "harmonic"
 
     return tempo, instrument_name, key, sound_class
 
