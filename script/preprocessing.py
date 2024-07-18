@@ -1,5 +1,6 @@
 import argparse
 import os
+
 import metadata
 
 def brid(file_path):
