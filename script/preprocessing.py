@@ -3,7 +3,7 @@ import os
 import metadata
 import mix
 
-def brid(file_path): # setting parameters for brid data
+def brid(file_path):
     """
     BRID DATASET PRE-PROCESSING
 
