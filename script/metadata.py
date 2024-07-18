@@ -1,9 +1,12 @@
 import json
 import os
 import librosa
-import mix
 import numpy as np
 import math
+
+import mix
+
+DEFAULT_SR = 22050
 
 def extraction(stem_file_path, **kwargs):
 
@@ -29,12 +32,12 @@ def extraction(stem_file_path, **kwargs):
 
     if metadata["tempo"] is None:
         print("tempo is None. calculating...")
-        tempo = get_tempo(stem_file_path, sr=kwargs["sr"]) # if tempo is none we extract and add to metadata 
+        tempo = get_tempo(stem_file_path) # if tempo is none we extract and add to metadata 
         metadata["tempo"] = tempo
 
     if metadata["sound_class"] is None:
         print("sound class is None. calculating...")
-        sound_class = percussive_harmonic(stem_file_path, sr=kwargs["sr"])
+        sound_class = percussive_harmonic(stem_file_path)
         metadata["sound_class"] = sound_class
 
 
@@ -46,11 +49,10 @@ def extraction(stem_file_path, **kwargs):
             json.dump(metadata, json_file, indent=4)
             print("json file created")
 
-
-def get_tempo(stem_path, sr): 
+def get_tempo(stem_path): 
 
     try:
-        audio_file, sr = librosa.load(stem_path, sr=sr, mono=True)
+        audio_file, sr = librosa.load(stem_path, sr=DEFAULT_SR, mono=True)
         tempo, _ = librosa.beat.beat_track(y=audio_file, sr=sr)
         tempo = float(tempo[0])
 
@@ -61,9 +63,9 @@ def get_tempo(stem_path, sr):
 
     return tempo
 
-def percussive_harmonic(stem_path, sr): # in the works: extracting percussive / harmonic component if not provided
+def percussive_harmonic(stem_path): # in the works: extracting percussive / harmonic component if not provided
     try:
-        audio_file, sr = librosa.load(stem_path, sr=sr, mono=True)
+        audio_file, sr = librosa.load(stem_path, sr=DEFAULT_SR, mono=True)
         audio_norm = librosa.util.normalize(audio_file)
         harmonic, percussive = librosa.effects.hpss(audio_norm)
 
