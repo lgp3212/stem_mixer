@@ -141,11 +141,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     kwargs = vars(args)
-    path_to_stems = os.path.join(args.data_home, "stems")
 
     if args.dataset == "brid":
-
-        for root, dirs, files in os.walk(path_to_stems):
+        for root, dirs, files in os.walk(args.data_home):
             for file in files:
                 file_path = os.path.join(root, file)
                 args.tempo, args.instrument_name, args.key, args.sound_class = brid(file_path)
@@ -156,8 +154,7 @@ if __name__ == "__main__":
 
 
     elif args.dataset == "musdb":
-
-        for root, dirs, files in os.walk(path_to_stems):
+        for root, dirs, files in os.walk(args.data_home):
             for file in files:
                 file_path = os.path.join(root, file)
                 args.tempo, args.instrument_name, args.key, args.sound_class = musdb(file_path)
@@ -166,44 +163,5 @@ if __name__ == "__main__":
                 # extracting unique metadata for all musdb .wav files
                 if file_path.endswith(".wav") or file_path.endswith(".mp3"):
                     metadata.extraction(file_path, **kwargs)
-
-
     else:
         print(f"{args.dataset} is not a supported dataset.")
-
-
-    count = 0
-    args.n_mixtures = 6
-    args.n_stems = 2
-
-    while count < args.n_mixtures: # count can only increase if valid mixture is made, lots of checks in place
-
-        invalid_mixture = False
-
-        base_stem_name, base_tempo, base_instrument, tempo_bin, json_percussive, json_harmonic, n_harmonic, n_percussive = mix.select_base_track(args.data_home, args.n_stems, args.n_harmonic, args.n_percussive)
-
-        selected_stems, base_tempo, invalid_mixture = mix.select_top_tracks(base_stem_name, base_tempo, base_instrument, tempo_bin, 
-            json_percussive, json_harmonic, args.n_stems, n_harmonic, n_percussive)
-
-        stretched_audios, invalid_mixture = mix.stretch(args.data_home, args.sr, selected_stems, base_tempo, invalid_mixture, args.n_stems) 
-        final_audios, invalid_mixture = mix.shift(args.sr, stretched_audios, invalid_mixture)
-
-        
-        invalid_mixture = mix.generate(args.data_home, args.sr, args.duration, invalid_mixture, final_audios)
-        # final function returns if it is a valid mixture or not. if not, it repeats again
-        
-        if not invalid_mixture:
-            print("")
-            print("this is a valid mix")
-            print("")
-            count += 1
-
-        
-
-
-
-
-
-
-
-
