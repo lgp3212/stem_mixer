@@ -66,14 +66,14 @@ def get_sound_class(stem_path): # in the works: extracting percussive / harmonic
         threshold = 0.50 # 50% THRESHOLD (subject to change)
 
         if percent_difference > threshold:
-            result = "percussive" if percussive_energy > harmonic_energy else "harmonic"
+            sound_class = "percussive" if percussive_energy > harmonic_energy else "harmonic"
         else:
-            result = "undetermined" # don't want None because then it will keep looping trying to fill in
+            sound_class = "undetermined" # don't want None because then it will keep looping trying to fill in
 
     except FileNotFoundError as e:
         print(f"File not found: {file_path}")
     except Exception as e:
         print(f"Unexpected error: {e}")
 
-    return result
+    return sound_class
 
