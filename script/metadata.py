@@ -14,14 +14,11 @@ def extraction(stem_file_path, **kwargs):
     # issue w passing kwargs each time is with each iteration this resets to none and goes through whole process again
     # talk to giovana about using kwargs
 
-    basename = os.path.splitext(stem_file_path)[0]
-    json_file_path = basename + ".json"
+    json_file_path  = os.path.splitext(stem_file_path)[0] + ".json"
 
     if not os.path.exists(json_file_path):
 
         metadata = kwargs.copy()
-
-        tempo = metadata["tempo"] # storing this to get tempo bin later
 
         # duration refers to the mixture duration, therefore we don't need it.
         metadata.pop("duration", None)
@@ -33,23 +30,18 @@ def extraction(stem_file_path, **kwargs):
         metadata.pop("n_stems", None)
 
         if metadata["tempo"] is None:
-            print("tempo is None. calculating...")
-            tempo = get_tempo(stem_file_path) # if tempo is none we extract and add to metadata 
-            metadata["tempo"] = tempo
+            tempo = get_tempo(stem_file_path) # if tempo is none, we extract it
+            metadata["tempo"] = tempo # updating metadata
 
         if metadata["sound_class"] is None:
-            print("sound class is None. calculating...")
-            sound_class = percussive_harmonic(stem_file_path)
-            metadata["sound_class"] = sound_class
+            sound_class = percussive_harmonic(stem_file_path) # if sound class is none, we extract it
+            metadata["sound_class"] = sound_class # updating metadata
 
+        metadata["tempo bin"] = math.ceil(metadata["tempo"] / 5) * 5 # adding tempo-bin to metadata
 
-        metadata["tempo bin"] = math.ceil(tempo / 5) * 5
-
-        # TODO: should we save this here or somewhere else?
-        if not os.path.exists(json_file_path):
-            with open(json_file_path, "w") as json_file:
-                json.dump(metadata, json_file, indent=4)
-                print("json file created")
+        with open(json_file_path, "w") as json_file:
+            json.dump(metadata, json_file, indent=4)
+            print("json file created")
 
 def get_tempo(stem_path): 
 
