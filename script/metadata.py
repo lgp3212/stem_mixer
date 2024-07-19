@@ -29,7 +29,7 @@ def extraction(stem_file_path, **kwargs):
             metadata["tempo"] = tempo # updating metadata
 
         if metadata["sound_class"] is None:
-            sound_class = percussive_harmonic(stem_file_path) # if sound class is none, we extract it
+            sound_class = get_sound_class(stem_file_path) # if sound class is none, we extract it
             metadata["sound_class"] = sound_class # updating metadata
 
         metadata["tempo bin"] = math.ceil(metadata["tempo"] / 5) * 5 # adding tempo-bin to metadata
@@ -52,7 +52,7 @@ def get_tempo(stem_path):
 
     return tempo
 
-def percussive_harmonic(stem_path): # in the works: extracting percussive / harmonic component if not provided
+def get_sound_class(stem_path): # in the works: extracting percussive / harmonic component if not provided
     try:
         audio_file, sr = librosa.load(stem_path, sr=DEFAULT_SR, mono=True)
         audio_norm = librosa.util.normalize(audio_file)
