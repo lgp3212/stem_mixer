@@ -1,18 +1,13 @@
 import json
+import math
 import os
+
 import librosa
 import numpy as np
-import math
-
-import mix
 
 DEFAULT_SR = 22050
 
 def extraction(stem_file_path, **kwargs):
-
-    # returning metadata object might be better, writing somewhere else
-    # issue w passing kwargs each time is with each iteration this resets to none and goes through whole process again
-    # talk to giovana about using kwargs
 
     json_file_path  = os.path.splitext(stem_file_path)[0] + ".json"
 
@@ -63,28 +58,17 @@ def percussive_harmonic(stem_path): # in the works: extracting percussive / harm
         audio_norm = librosa.util.normalize(audio_file)
         harmonic, percussive = librosa.effects.hpss(audio_norm)
 
-        print(stem_path)
-
-        harmonic_energy = np.sqrt(np.mean(np.square(harmonic)))
-        print("harmonic energy rmse ", harmonic_energy)
-      
+        harmonic_energy = np.sqrt(np.mean(np.square(harmonic))) 
         percussive_energy = np.sqrt(np.mean(np.square(percussive)))
-        print("percussive energy rmse ",percussive_energy)
       
-
         percent_difference = abs(harmonic_energy - percussive_energy) / ((harmonic_energy + percussive_energy) / 2)
-        print(percent_difference)
-
-        threshold = 0.50 # 50% THRESHOLD, subject to change
+  
+        threshold = 0.50 # 50% THRESHOLD (subject to change)
 
         if percent_difference > threshold:
             result = "percussive" if percussive_energy > harmonic_energy else "harmonic"
         else:
-            #result = None; changed bc if none then it will just keep looping 
-            result = "undetermined"
-
-        print(result)
-        print("")
+            result = "undetermined" # don't want None because then it will keep looping trying to fill in
 
     except FileNotFoundError as e:
         print(f"File not found: {file_path}")
