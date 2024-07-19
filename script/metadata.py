@@ -9,6 +9,27 @@ DEFAULT_SR = 22050
 
 def extraction(stem_file_path, **kwargs):
 
+    """
+
+    Takes file path to a stem and processes its metadata to save as JSON.
+
+    Parameters:
+    stem_file_path (str): Path to the audio stem file.
+    **kwargs: Additional metadata to include in the JSON file. Expected keys are:
+        - tempo (float or None): Tempo of the audio track. If None, it will be extracted.
+        - sound_class (str or None): Sound class of the audio track. If None, it will be extracted.
+        - duration (float): Duration of the mixture (not used in the final metadata).
+        - track_files (list): List of track files (not used in the final metadata).
+        - n_mixtures (int): Number of mixtures (not used in the final metadata).
+        - n_harmonic (int): Number of harmonic components (not used in the final metadata).
+        - n_percussive (int): Number of percussive components (not used in the final metadata).
+        - n_stems (int): Number of stems (not used in the final metadata).
+
+    Returns: 
+    None
+
+    """
+
     json_file_path  = os.path.splitext(stem_file_path)[0] + ".json"
 
     if not os.path.exists(json_file_path):
@@ -40,6 +61,17 @@ def extraction(stem_file_path, **kwargs):
 
 def get_tempo(stem_path): 
 
+    """
+    Extracts the tempo from an audio stem file.
+
+    Parameters:
+    stem_path (str): Path to the audio stem file.
+
+    Returns:
+    tempo (float): The estimated tempo of the audio file.
+
+    """
+
     try:
         audio_file, sr = librosa.load(stem_path, sr=DEFAULT_SR, mono=True)
         tempo, _ = librosa.beat.beat_track(y=audio_file, sr=sr)
@@ -52,7 +84,20 @@ def get_tempo(stem_path):
 
     return tempo
 
-def get_sound_class(stem_path): # in the works: extracting percussive / harmonic component if not provided
+def get_sound_class(stem_path):
+
+    """
+    Extracts the sound class (harmonic / percussive) from an audio stem file.
+
+    Parameters:
+    stem_path (str): Path to the audio stem file.
+
+    Returns:
+    sound_class (str): The determined sound class of the audio file, or "undetermined"
+    if difference between percussive / harmonic is not significant enough
+
+    """
+
     try:
         audio_file, sr = librosa.load(stem_path, sr=DEFAULT_SR, mono=True)
         audio_norm = librosa.util.normalize(audio_file)
