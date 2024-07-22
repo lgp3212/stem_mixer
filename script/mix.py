@@ -1,4 +1,4 @@
-import os 
+import os
 import glob
 import random
 import uuid
@@ -8,8 +8,6 @@ import json
 import numpy as np
 
 def generate(data_home, sr, duration, invalid_mixture, stretched_audios):
-
-
 	mixture_folder = os.path.join(data_home, "mixtures")
 	os.makedirs(mixture_folder, exist_ok = True)
 
@@ -20,14 +18,12 @@ def generate(data_home, sr, duration, invalid_mixture, stretched_audios):
 	min_length = min(stretched_audios_lengths)
 	min_pos = stretched_audios_lengths.index(min_length)
 
-
 	total_length = min_length
 
 	center = total_length // 2
 
 	start_sample = max(0, total_length - int(duration*sr))
 	end_sample = total_length
-
 
 	truncated_stems = []
 	for audio in stretched_audios:
@@ -45,11 +41,9 @@ def generate(data_home, sr, duration, invalid_mixture, stretched_audios):
 		mixture_audio += stem
 
 	if invalid_mixture == False: # if it passes all checks
-
 		mixture_id = str(uuid.uuid4())
 		individual_output_folder = os.path.join(mixture_folder, mixture_id)
 		os.makedirs(individual_output_folder, exist_ok=True)
-
 
 		for k in range(0, len(truncated_stems)):
 			sf.write(f"{individual_output_folder}/stem{k+1}.wav", truncated_stems[k], sr)
@@ -60,7 +54,6 @@ def generate(data_home, sr, duration, invalid_mixture, stretched_audios):
 	return invalid_mixture
 
 def select_base_track(data_home, n_stems, n_harmonic, n_percussive):
-
 	# first check to make sure user has not provided n harm and n perc such that n_harm + n_perc != n_total
 	if (n_harmonic + n_percussive) != n_stems:
 		n_harmonic = 0
@@ -103,7 +96,7 @@ def select_base_track(data_home, n_stems, n_harmonic, n_percussive):
 	with open(random_json_file, "r") as f:
 		data = json.load(f)
 		base_tempo = data.get("tempo")
-		tempo_bin = data.get("tempo bin")
+		tempo_bin = data.get("tempo_bin")
 		base_instrument = data.get("instrument_name")
 
 
@@ -128,7 +121,7 @@ def select_top_tracks(base_stem_name, base_tempo, base_instrument, tempo_bin, js
 		with open(file, "r") as f:
 			data = json.load(f)
 
-			if data.get("tempo bin") == tempo_bin:
+			if data.get("tempo_bin") == tempo_bin:
 
 				# checking that it is not file already picked
 				split_name = os.path.basename(file)
@@ -140,14 +133,14 @@ def select_top_tracks(base_stem_name, base_tempo, base_instrument, tempo_bin, js
 	for file in json_harmonic:
 		with open(file, "r") as f:
 			data = json.load(f)
-			if data.get("tempo bin") == tempo_bin:
+			if data.get("tempo_bin") == tempo_bin:
 				split_name = os.path.basename(file)
 				new_stem_name, _ = os.path.splitext(split_name)
 				if new_stem_name != base_stem_name:
 					tempo_bin_harmonic[new_stem_name] = [data.get("tempo"), data.get("instrument_name")]
 
 	# how to deal with index out of bound error?
-	# might want to create a flag for whether its a valid mixture or not. 
+	# might want to create a flag for whether its a valid mixture or not.
 	selected_stems = {}
 	selected_stems[base_stem_name] = [base_tempo, base_instrument]
 
@@ -180,7 +173,7 @@ def select_top_tracks(base_stem_name, base_tempo, base_instrument, tempo_bin, js
 		for stem in selected_stems.keys():
 			list_of_instruments.append(selected_stems[stem][1])
 
-		print(list_of_instruments)	
+		print(list_of_instruments)
 
 		if len(list_of_instruments) != len(set(list_of_instruments)): # repeated instrument
 			invalid_mixture = True
@@ -188,7 +181,7 @@ def select_top_tracks(base_stem_name, base_tempo, base_instrument, tempo_bin, js
 	except ValueError as e:
 		invalid_mixture = True
 
-	return selected_stems, base_tempo, invalid_mixture # should we make it so this process cuts quicker 
+	return selected_stems, base_tempo, invalid_mixture # should we make it so this process cuts quicker
 	# when invalid
 
 def stretch(data_home, sr, selected_stems, base_tempo, invalid_mixture, n_stems):
@@ -225,7 +218,7 @@ def stretch(data_home, sr, selected_stems, base_tempo, invalid_mixture, n_stems)
 	audio, sr = librosa.load(wav_file, sr=sr)
 	audio_norm = librosa.util.normalize(audio)
 
-	# normalizing audio 
+	# normalizing audio
 
 
 	stretched_audios.append(audio_norm)
@@ -235,7 +228,7 @@ def stretch(data_home, sr, selected_stems, base_tempo, invalid_mixture, n_stems)
 
 	return stretched_audios, invalid_mixture
 
-def shift(sr, stretched_audios, invalid_mixture): 
+def shift(sr, stretched_audios, invalid_mixture):
 
 	first_downbeats = []
 	final_audios = []
