@@ -30,7 +30,7 @@ def extraction(stem_file_path, **kwargs):
 
     """
 
-    json_file_path  = os.path.splitext(stem_file_path)[0] + ".json"
+    json_file_path  = "stems/" + stem_file_path + ".json"
 
     if not os.path.exists(json_file_path):
 
@@ -44,6 +44,7 @@ def extraction(stem_file_path, **kwargs):
         metadata.pop("n_harmonic", None)
         metadata.pop("n_percussive", None)
         metadata.pop("n_stems", None)
+
 
         if metadata["tempo"] is None:
             tempo = get_tempo(stem_file_path) # if tempo is none, we extract it

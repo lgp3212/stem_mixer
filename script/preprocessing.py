@@ -114,11 +114,30 @@ if __name__ == "__main__":
         "musdb" : musdb
     }
 
+    path_to_brid = os.path.join(args.data_home, "..", "script", "brid.txt")
+    path_to_musdb = os.path.join(args.data_home, "..", "script", "musdb.txt")
+
+    with open(path_to_brid, "r") as bridtxt:
+        brid_files = "".join(line.strip() for line in bridtxt)
+
+    with open(path_to_musdb, "r") as musdbtxt:
+        musdb_files = "".join(line.strip() for line in musdbtxt)
+
     for root, dirs, files in os.walk(args.data_home):
         for file in files:
             file_path = os.path.join(root, file)
-            args.tempo, args.instrument_name, args.key, args.sound_class = preprocessing_functions[args.dataset](file_path)
 
-            # extracting unique metadata for all brid .wav files
-            if file_path.endswith(".wav") or file_path.endswith(".mp3"):
-                metadata.extraction(file_path, **kwargs)
+            if file_path.endswith(".wav"):
+                stem_name = os.path.splitext(file_path)[0][6:]
+                if stem_name in brid_files:
+                    args.tempo, args.instrument_name, args.key, args.sound_class = brid(file_path)
+                elif stem_name in musdb_files:
+                    args.tempo, args.instrument_name, args.key, args.sound_class = musdb(file_path)
+                else:
+                    args.tempo = None
+                    args.instrument_name = None
+                    args.key = None
+                    args.sound_class = None
+
+                metadata.extraction(stem_name, **kwargs)
+
