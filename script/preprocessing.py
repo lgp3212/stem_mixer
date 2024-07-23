@@ -9,6 +9,7 @@ import metadata
 BRID_INDEX = "brid_index.txt"
 MUSDB_INDEX = "musdb_index.txt"
 
+
 def brid_track_info(data_home, tid):
     """
     BRID DATASET PRE-PROCESSING
@@ -35,7 +36,7 @@ def brid_track_info(data_home, tid):
     track_metadata["sound_class"] = "percussive"
 
     suffix_to_instr = {
-        "PD" : "pandeiro",
+        "PD": "pandeiro",
         "TB": "tamborim",
         "RR": "reco-reco",
         "CX": "caixa",
@@ -44,15 +45,15 @@ def brid_track_info(data_home, tid):
         "AG": "agogo",
         "SK": "shaker",
         "TT": "tanta",
-        "SU": "surdo"
+        "SU": "surdo",
     }
 
     suffix_to_tempo = {
-        "SA.wav" : 80.0,
+        "SA.wav": 80.0,
         "PA.wav": 100.0,
         "CA.wav": 65.0,
         "SE.wav": 130.0,
-        "MA.wav": 120.0
+        "MA.wav": 120.0,
     }
 
     # BRID stems adhere to the following structure: [GID#] MX-YY-ZZ.wav
@@ -74,7 +75,9 @@ def musdb(data_home):
     """
     musdb_stems = stems_from_file(MUSDB_INDEX)
 
-    all_stems = [os.path.basename(tid) for tid in glob.glob(os.path.join(data_home, "*.wav"))]
+    all_stems = [
+        os.path.basename(tid) for tid in glob.glob(os.path.join(data_home, "*.wav"))
+    ]
     all_stems = set(all_stems)
 
     # process only what we have inside the stems folder
@@ -141,7 +144,9 @@ def brid(data_home):
     """
     brid_stems = stems_from_file(BRID_INDEX)
 
-    all_stems = [os.path.basename(tid) for tid in glob.glob(os.path.join(data_home, "*.wav"))]
+    all_stems = [
+        os.path.basename(tid) for tid in glob.glob(os.path.join(data_home, "*.wav"))
+    ]
     all_stems = set(all_stems)
 
     # process only what we have inside the stems folder
@@ -181,7 +186,9 @@ def process(data_home, datasets=None):
         dataset : list
     """
     # create a set with all stems (basename only)
-    available_stems = set([os.path.basename(tid) for tid in glob.glob(os.path.join(data_home, "*.wav"))])
+    available_stems = set(
+        [os.path.basename(tid) for tid in glob.glob(os.path.join(data_home, "*.wav"))]
+    )
 
     if datasets is not None and "brid" in datasets:
         # process tracks
@@ -202,25 +209,29 @@ def process(data_home, datasets=None):
     pbar.set_description("Processing remaining stems")
     for tid in pbar:
         track_metadata = metadata.dict_template(data_home, tid)
-        metadata.extraction(os.path.join(data_home, tid),
-                track_metadata=track_metadata)
+        metadata.extraction(os.path.join(data_home, tid), track_metadata=track_metadata)
 
     return
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-            prog="PreprocessingHelper",
-            description="This script creates metadata for BRID and/or MUSDB"
+        prog="PreprocessingHelper",
+        description="This script creates metadata for BRID and/or MUSDB",
     )
 
-    parser.add_argument("--data_home", required=True, help="pathway to where is data is stored")
-    parser.add_argument("--datasets", required=False, help="supported datasets: BRID (enter 'brid') and MUSDB (enter 'musdb')")
+    parser.add_argument(
+        "--data_home", required=True, help="pathway to where is data is stored"
+    )
+    parser.add_argument(
+        "--datasets",
+        required=False,
+        help="supported datasets: BRID (enter 'brid') and MUSDB (enter 'musdb')",
+    )
 
     args = parser.parse_args()
 
     if args.datasets is not None:
         args.datasets = args.datasets.split(",")
-        print(args.datasets)
 
     process(args.data_home, args.datasets)

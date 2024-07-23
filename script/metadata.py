@@ -7,6 +7,7 @@ import numpy as np
 
 DEFAULT_SR = 22050
 
+
 # is it better to have a class?
 def dict_template(data_home=None, stem_name=None):
     """
@@ -18,7 +19,7 @@ def dict_template(data_home=None, stem_name=None):
         "data_home": data_home,
         "tempo": None,
         "key": None,
-        "sound_class": None
+        "sound_class": None,
     }
 
     return metadata
@@ -54,7 +55,9 @@ def extraction(stem_path, track_metadata=None, overwrite=False):
             # print("extracting sound_class")
             metadata["sound_class"] = get_sound_class(stem_path)
 
-        metadata["tempo_bin"] = math.ceil(metadata["tempo"] / 5) * 5 # adding tempo-bin to metadata
+        metadata["tempo_bin"] = (
+            math.ceil(metadata["tempo"] / 5) * 5
+        )  # adding tempo-bin to metadata
 
         with open(json_file_path, "w") as json_file:
             json.dump(metadata, json_file, indent=4)
@@ -96,13 +99,17 @@ def get_sound_class(stem_path):
     harmonic_energy = np.sqrt(np.mean(np.square(harmonic)))
     percussive_energy = np.sqrt(np.mean(np.square(percussive)))
 
-    percent_difference = abs(harmonic_energy - percussive_energy) / ((harmonic_energy + percussive_energy) / 2)
+    percent_difference = abs(harmonic_energy - percussive_energy) / (
+        (harmonic_energy + percussive_energy) / 2
+    )
 
-    threshold = 0.50 # 50% THRESHOLD (subject to change)
+    threshold = 0.50  # 50% THRESHOLD (subject to change)
 
     if percent_difference > threshold:
-        sound_class = "percussive" if percussive_energy > harmonic_energy else "harmonic"
+        sound_class = (
+            "percussive" if percussive_energy > harmonic_energy else "harmonic"
+        )
     else:
-        sound_class = "undetermined" # don't want None because then it will keep looping trying to fill in
+        sound_class = "undetermined"  # don't want None because then it will keep looping trying to fill in
 
     return sound_class
