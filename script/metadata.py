@@ -1,85 +1,115 @@
 import json
+import math
 import os
+
 import librosa
+import numpy as np
 
-def extraction(path_to_stem, tempo, instrument_name, key, sound_class):
+DEFAULT_SR = 22050
 
-	# whenever i add text description here get indentation error, it's in google doc for now
 
-    if (path_to_stem.endswith(".wav") or path_to_stem.endswith(".mp3")) and not path_to_stem.endswith(".json"):
-        json_name = path_to_stem[0:len(path_to_stem)-4]
-    else:
-        json_name = None
+# is it better to have a class?
+def dict_template(data_home=None, stem_name=None):
+    """
+    create empty metadata dictionary
+    """
 
-    metadata = {}
-    metadata["tempo"] = tempo
-    metadata["instrument_name"] = instrument_name
-    metadata["key"] = key
-    metadata["sound_class"] = sound_class
+    metadata = {
+        "stem_name": stem_name,
+        "data_home": data_home,
+        "tempo": None,
+        "key": None,
+        "sound_class": None,
+    }
 
-    stems = os.path.join(path_to_stem, "..")
-    json_file_path = os.path.join(stems, f"{json_name}.json")
+    return metadata
 
-    if not os.path.exists(json_file_path):
+
+def extraction(stem_path, track_metadata=None, overwrite=False):
+    """
+    Takes file path to a stem and processes its metadata to save as JSON.
+
+    Parameters:
+        stem_path: str
+            Path to the audio stem file.
+        metadata: dict (optional)
+            dictionary with pre-computed metadata
+
+    Returns:
+        None
+    """
+
+    json_file_path = os.path.splitext(stem_path)[0] + ".json"
+
+    if track_metadata is None:
+        track_metadata = dict_template()
+
+    if not os.path.exists(json_file_path) and not overwrite:
+        metadata = track_metadata.copy()
+
+        if metadata["tempo"] is None:
+            # print("extracting tempo")
+            metadata["tempo"] = get_tempo(stem_path)
+
+        if metadata["sound_class"] is None:
+            # print("extracting sound_class")
+            metadata["sound_class"] = get_sound_class(stem_path)
+
+        metadata["tempo_bin"] = (
+            math.ceil(metadata["tempo"] / 5) * 5
+        )  # adding tempo-bin to metadata
+
         with open(json_file_path, "w") as json_file:
             json.dump(metadata, json_file, indent=4)
-            print("json file created")
 
 
-def get_wav_from_json(path_to_stems, file_name): # useful for getting tempo, instrument name, etc
-    for file in os.listdir(path_to_stems):
-        if file_name in file and not file.endswith(".json"):
-            audio_path = file
-    return audio_path
+def get_tempo(stem_path):
+    """
+    Extracts the tempo from an audio stem file.
+
+    Parameters:
+        stem_path (str): Path to the audio stem file.
+
+    Returns:
+        tempo (float): The estimated tempo of the audio file.
+    """
+
+    audio_file, sr = librosa.load(stem_path, sr=DEFAULT_SR, mono=True)
+    tempo, _ = librosa.beat.beat_track(y=audio_file, sr=sr)
+    tempo = float(tempo[0])
+    return tempo
 
 
-def set_tempo(data_home, sr):
-	print("ENTERING SET TEMPO")
-	path_to_stems = os.path.join(data_home, "stems")
-	json_files = [file for file in os.listdir(path_to_stems) if file.endswith(".json") and not file.startswith(".")]
-	print("Trying to see if it 'sees' first json file:",json_files)
+def get_sound_class(stem_path):
+    """
+    Extracts the sound class (harmonic / percussive) from an audio stem file.
 
-	for json_file in json_files:
-		print(json_file)
-		file_path = os.path.join(path_to_stems, json_file)
-		print(file_path)
-		file_name = os.path.basename(file_path)
-		file_name = os.path.splitext(file_name)[0]
-		print(file_name)
+    Parameters:
+        stem_path (str): Path to the audio stem file.
 
-		with open(file_path, "r") as file:
-			data = json.load(file)
-			print(data)
+    Returns:
+        sound_class (str): The determined sound class of the audio file, or "undetermined"
+        if difference between percussive / harmonic is not significant enough
+    """
 
-		if "tempo" in data:
-			if data["tempo"] is None:
-				print(f"Tempo is None in file: {json_file}")
+    audio_file, sr = librosa.load(stem_path, sr=DEFAULT_SR, mono=True)
+    audio_norm = librosa.util.normalize(audio_file)
+    harmonic, percussive = librosa.effects.hpss(audio_norm)
 
-			try:
-				audio_path = os.path.join(path_to_stems, get_wav_from_json(path_to_stems, file_name))
-				print("audio path ", audio_path)
-				print("loading audio bc first one seems to render empty")
+    harmonic_energy = np.sqrt(np.mean(np.square(harmonic)))
+    percussive_energy = np.sqrt(np.mean(np.square(percussive)))
 
-				audio_file, sr = librosa.load(audio_path, sr = sr)
-				print(audio_file.shape)
+    percent_difference = abs(harmonic_energy - percussive_energy) / (
+        (harmonic_energy + percussive_energy) / 2
+    )
 
-				tempo, _ = librosa.beat.beat_track(y=audio_file, sr=sr)
-				tempo = float(tempo[0])
+    threshold = 0.50  # 50% THRESHOLD (subject to change)
 
-				print(tempo)
-				print("data type of tempo: ", type(tempo))
-				data["tempo"] = tempo
+    if percent_difference > threshold:
+        sound_class = (
+            "percussive" if percussive_energy > harmonic_energy else "harmonic"
+        )
+    else:
+        sound_class = "undetermined"  # don't want None because then it will keep looping trying to fill in
 
-				with open(file_path, "w") as file:
-					json.dump(data, file, indent=4)
-
-			except FileNotFoundError as e:
-				print(f"FIle not found: {file_path}")
-			except Exception as e:
-				print(f"Unexpected error: {e}")
-		else:
-			print(f"Tempo not found in file: {json_file}")
-
-
-
-
+    return sound_class
