@@ -116,6 +116,8 @@ def musdb_track_info(data_home, tid):
     # removing .wav extension
     stem_name = stem_path.split("-")[-1].strip()[0:-4]
 
+    print("musdb_stem name", stem_name)
+
     track_metadata["instrument_name"] = stem_name if stem_name != "other" else None
 
     sound_class = None

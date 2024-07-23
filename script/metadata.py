@@ -38,7 +38,7 @@ def extraction(stem_path, track_metadata=None, overwrite=False):
         None
     """
 
-    json_file_path  = stem_path + ".json"
+    json_file_path  = stem_path[0:-4] + ".json"
 
     if track_metadata is None:
         track_metadata = dict_template()
