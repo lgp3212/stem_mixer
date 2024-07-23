@@ -103,7 +103,10 @@ def musdb_track_info(data_home, tid):
     i.e. "Bobby Nobody - Stich Up - drums.wav"
 
     Parameters:
-        stem_path (str) : path to stem
+        data_home : str
+            path to folder containing stems
+        tid: str
+            track id
 
     Returns:
         tempo : null
@@ -113,10 +116,9 @@ def musdb_track_info(data_home, tid):
     """
     track_metadata = metadata.dict_template(data_home=data_home, stem_name=tid)
 
+    stem_name = tid.split("-")[-1].strip()
     # removing .wav extension
-    stem_name = stem_path.split("-")[-1].strip()[0:-4]
-
-    print("musdb_stem name", stem_name)
+    stem_name = os.path.splitext(stem_name)[0]
 
     track_metadata["instrument_name"] = stem_name if stem_name != "other" else None
 
