@@ -5,7 +5,7 @@ import os
 import librosa
 import numpy as np
 
-DEFAULT_SR = 22050
+DEFAULT_SR = 44100
 
 
 # is it better to have a class?
@@ -79,6 +79,7 @@ def get_tempo(stem_path):
     audio_file, sr = librosa.load(stem_path, sr=DEFAULT_SR, mono=True)
     tempo, _ = librosa.beat.beat_track(y=audio_file, sr=sr)
     tempo = float(tempo[0])
+
     return tempo
 
 
