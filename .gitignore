@@ -3,6 +3,10 @@
 **/.ipynb_checkpoints/
 .ruff_cache/
 
+# sphinx config
+docs/build/
+docs/source/generated/
+
 **/*.wav
 **/*.mp3
 **/*.json
