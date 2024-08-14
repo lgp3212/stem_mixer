@@ -1,0 +1,37 @@
+[build-system]
+requires 		= ["setuptools>=61.0.0", "wheel"]
+build-backend	= "setuptools.build_meta"
+
+[project]
+name = "stem_mixer"
+description = "Data augmentation for source separation models"
+version = "0.1.0"
+readme = "README.md"
+license = {file = "LICENSE.md"}
+authors = [
+	{name = "Giovana Morais", email = "giovana.morais@nyu.edu"},
+	{name = "Lindsey Pietrewicz", email = "lgp3212@nyu.edu"},
+]
+classifiers = [
+	"Development Status :: 2 - Pre-Alpha",
+
+	"License :: OSI Approved :: ISC License (ISCL)",
+
+	"Programming Language :: Python",
+	"Programming Language :: Python :: 3",
+]
+dependencies = [
+	"librosa >= 0.10.0",
+	"pandas",
+	"soundfile >= 0.12.1",
+	"tqdm"
+]
+requires-python = ">=3.10"
+
+[project.optional-dependencies]
+docs = ["sphinx"]
+dev = ["pip-tools", "pytest", "ruff"]
+
+[project.urls]
+Repository = "https://github.com/giovana-morais/stem_mixer"
+Documentation = "https://giovana-morais.github.io/stem_mixer"
