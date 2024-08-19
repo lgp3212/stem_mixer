@@ -24,8 +24,6 @@ import pandas as pd
 import soundfile as sf
 import tqdm
 
-DEFAULT_SR = 44100
-
 
 def select_stems(
     n_percussive, n_harmonic, data_home, index_file, base_stem=None, **kwargs
@@ -149,7 +147,7 @@ def possible_tempo_bins(index, n_harmonic, n_percussive):
     return possible_tempo
 
 
-def time_stretch(stems, base_tempo, duration):
+def time_stretch(stems, base_tempo, duration=10.0, sr=22050):
     r"""
     Receive a base_tempo and stretch select stems to match it.
 
@@ -168,7 +166,7 @@ def time_stretch(stems, base_tempo, duration):
 
         audio_path = os.path.join(s["data_home"], s["stem_name"])
         # removing silences at beginning and ending
-        audio, sr = librosa.load(audio_path, sr=DEFAULT_SR, duration=duration * 2)
+        audio, sr = librosa.load(audio_path, sr=sr, duration=duration * 2)
         audio, _ = librosa.effects.trim(audio)
 
         new_tempo = base_tempo / stem_tempo
@@ -177,7 +175,7 @@ def time_stretch(stems, base_tempo, duration):
     return stems
 
 
-def align_first_beat(stems):
+def align_first_beat(stems, sr=22050):
     r"""
     Zero pad stems so their first beat is aligned.
 
@@ -197,8 +195,8 @@ def align_first_beat(stems):
     latest_beat_time = 0
 
     for s in aligned_stems:
-        _, beat_frames = librosa.beat.beat_track(y=s["stretched_audio"], sr=DEFAULT_SR)
-        beat_times = librosa.frames_to_time(beat_frames, sr=DEFAULT_SR)
+        _, beat_frames = librosa.beat.beat_track(y=s["stretched_audio"], sr=sr)
+        beat_times = librosa.frames_to_time(beat_frames, sr=sr)
         s["first_beat_time"] = beat_times[0]
 
         if s["first_beat_time"] > latest_beat_time:
@@ -206,7 +204,7 @@ def align_first_beat(stems):
 
     for s in aligned_stems:
         shift_difference = np.abs(s["first_beat_time"] - latest_beat_time)
-        silence_samples = int(shift_difference * DEFAULT_SR)
+        silence_samples = int(shift_difference * sr)
         s["audio"] = np.pad(
             s["stretched_audio"],
             (silence_samples, 0),
@@ -217,7 +215,7 @@ def align_first_beat(stems):
     return aligned_stems
 
 
-def mix(duration, stems, strategy="zeros"):
+def mix(duration, stems, strategy="zeros", sr=22050):
     r"""
     Receives final processed
     audios and cuts them all to the length of the shortest audio to ensure there will be no
@@ -242,14 +240,14 @@ def mix(duration, stems, strategy="zeros"):
     None
     """
 
-    mixture_length = int(duration * DEFAULT_SR)
+    mixture_length = int(duration * sr)
     mixture_audio = np.zeros(mixture_length)
 
     # TODO: implement strategies
     for s in stems:
         # pad ending with zeros
         s["audio"] = librosa.util.fix_length(data=s["audio"], size=mixture_length)
-        mixture_audio += librosa.util.normalize(s["audio"])
+        mixture_audio += s["audio"]
 
     return mixture_audio, stems
 
@@ -291,13 +289,34 @@ def generate_mixtures(
             index_file, base_stem=None)
     stems = time_stretch(stems, base_tempo, duration)
     stems = align_first_beat(stems)
+    stems = normalize(stems)
+
     mixture, stems = mix(duration, stems)
     save_mixture(output_folder, mixture, stems)
 
     return
 
+def normalize(stems):
+    min_rms = np.inf
 
-def save_mixture(output_folder, mixture, stems):
+    # get minimal RMS
+    for s in stems:
+        # should we move this away from here maybe?
+        # maybe calculate together with the metadata?
+        rms = np.sqrt(np.mean(s["audio"]**2))
+        # s["rms"] = np.sqrt(np.mean(s["audio"]))
+        s["rms"] = rms
+
+        if s["rms"] < min_rms:
+            min_rms = s["rms"]
+
+    for s in stems:
+        s["audio"] = s["audio"]*(min_rms/s["rms"])
+
+    return stems
+
+
+def save_mixture(output_folder, mixture, stems, sr=22050):
     """
     write mixture to .wav file and metadata to .json file
 
@@ -318,11 +337,15 @@ def save_mixture(output_folder, mixture, stems):
     mixture_id = str(uuid.uuid4())
     mixture_path = os.path.join(output_folder, mixture_id)
 
-    sf.write(f"{mixture_path}.wav", mixture, DEFAULT_SR)
+    os.makedirs(mixture_path)
+    sf.write(f"{mixture_path}/mixture.wav", mixture, sr)
 
     for s in stems:
+        sf.write(f"{mixture_path}/{s['stem_name']}.wav", s["audio"], sr)
+        # remove
         s.pop("stretched_audio", None)
         s.pop("audio", None)
+        s.pop("rms", None)
 
     with open(f"{mixture_path}.json", "w") as f:
         json.dump(stems, f)
